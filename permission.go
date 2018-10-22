@@ -21,6 +21,15 @@ import (
 )
 
 func CheckRightList(jwthttp jwt_http_router.JwtImpersonate, kind string, ids []string, right string) (ok bool, err error) {
-	err = jwthttp.GetJSON(Config.PermissionsUrl+"/jwt/check/"+kind+"/"+right, &ok)
-	return
+	oks := map[string]bool{}
+	err = jwthttp.PostJSON(Config.PermissionsUrl+"/ids/check/"+kind+"/"+right, ids, &oks)
+	if err != nil {
+		return false, err
+	}
+	for _, element := range oks {
+		if !element {
+			return false, err
+		}
+	}
+	return true, err
 }

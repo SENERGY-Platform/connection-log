@@ -49,6 +49,7 @@ func getRoutes() (router *jwt_http_router.Router) {
 		}
 		ok, err := CheckRightList(jwt.Impersonate, "deviceinstance", ids, "r")
 		if err != nil {
+			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -58,6 +59,7 @@ func getRoutes() (router *jwt_http_router.Router) {
 		}
 		result, err := checkDeviceOnlineStates(ids)
 		if err != nil {
+			log.Println("ERROR: while checking online states", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
