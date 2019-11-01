@@ -1,8 +1,7 @@
 {
   "MongoUrl": "mongodb://mongo",
   "MongoTable": "connectionlog",
-  "ConnectorGatewayCollection": "connector_gateway",
-  "ConnectorDeviceCollection": "connector_device",
+
   "DeviceStateCollection": "devicestate",
   "GatewayStateCollection": "gatewaystate",
 

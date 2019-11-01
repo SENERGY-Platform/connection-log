@@ -38,34 +38,6 @@ func getMongoDb() *mgo.Session {
 	return mongoDbInstance.Copy()
 }
 
-func getConnectorGatewayCollection() (session *mgo.Session, collection *mgo.Collection) {
-	session = getMongoDb()
-	collection = session.DB(Config.MongoTable).C(Config.ConnectorGatewayCollection)
-	err := collection.EnsureIndexKey("connector")
-	if err != nil {
-		log.Fatal("error on ConnectorGatewayCollection connector index: ", err)
-	}
-	err = collection.EnsureIndexKey("gateway")
-	if err != nil {
-		log.Fatal("error on ConnectorGatewayCollection gateway index: ", err)
-	}
-	return
-}
-
-func getConnectorDeviceCollection() (session *mgo.Session, collection *mgo.Collection) {
-	session = getMongoDb()
-	collection = session.DB(Config.MongoTable).C(Config.ConnectorDeviceCollection)
-	err := collection.EnsureIndexKey("connector")
-	if err != nil {
-		log.Fatal("error on ConnectorDeviceCollection connector index: ", err)
-	}
-	err = collection.EnsureIndexKey("device")
-	if err != nil {
-		log.Fatal("error on ConnectorDeviceCollection device index: ", err)
-	}
-	return
-}
-
 func getDeviceStateCollection() (session *mgo.Session, collection *mgo.Collection) {
 	session = getMongoDb()
 	collection = session.DB(Config.MongoTable).C(Config.DeviceStateCollection)
@@ -84,16 +56,6 @@ func getGatewayStateCollection() (session *mgo.Session, collection *mgo.Collecti
 		log.Fatal("error on getGatewayStateCollection gateway index: ", err)
 	}
 	return
-}
-
-type ConnectorGatewayConnection struct {
-	Connector string `json:"connector,omitempty" bson:"connector,omitempty"`
-	Gateway   string `json:"gateway,omitempty" bson:"gateway,omitempty"`
-}
-
-type ConnectorDeviceConnection struct {
-	Connector string `json:"connector,omitempty" bson:"connector,omitempty"`
-	Device    string `json:"device,omitempty" bson:"device,omitempty"`
 }
 
 type DeviceState struct {

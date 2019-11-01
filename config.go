@@ -30,8 +30,6 @@ import (
 type ConfigStruct struct {
 	MongoUrl                   string
 	MongoTable                 string
-	ConnectorGatewayCollection string
-	ConnectorDeviceCollection  string
 	DeviceStateCollection      string
 	GatewayStateCollection     string
 
