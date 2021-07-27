@@ -14,40 +14,37 @@
  * limitations under the License.
  */
 
-package main
+package api
 
 import (
 	"encoding/json"
+	"github.com/SmartEnergyPlatform/connection-log/pkg/api/util"
+	"github.com/SmartEnergyPlatform/connection-log/pkg/configuration"
+	"github.com/SmartEnergyPlatform/connection-log/pkg/controller"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
-
-	"github.com/SmartEnergyPlatform/util/http/response"
-
-	"github.com/SmartEnergyPlatform/util/http/cors"
-	"github.com/SmartEnergyPlatform/util/http/logger"
-
-	"github.com/SmartEnergyPlatform/jwt-http-router"
 )
 
-func StartRest() {
-	log.Println("start server on port: ", Config.ServerPort)
-	httpHandler := getRoutes()
-	corseHandler := cors.New(httpHandler)
-	logger := logger.New(corseHandler, Config.LogLevel)
-	log.Println(http.ListenAndServe(":"+Config.ServerPort, logger))
+func StartRest(config configuration.Config, ctrl *controller.Controller) {
+	log.Println("start server on port: ", config.ServerPort)
+	httpHandler := getRoutes(config, ctrl)
+	corseHandler := util.NewCors(httpHandler)
+	logger := util.NewLogger(corseHandler)
+	log.Println(http.ListenAndServe(":"+config.ServerPort, logger))
 }
 
-func getRoutes() (router *jwt_http_router.Router) {
-	router = jwt_http_router.New(jwt_http_router.JwtConfig{ForceAuth: Config.ForceAuth == "true", ForceUser: Config.ForceUser == "true"})
+func getRoutes(config configuration.Config, ctrl *controller.Controller) (router *httprouter.Router) {
+	router = httprouter.New()
 
-	router.POST("/state/device/check", func(res http.ResponseWriter, r *http.Request, ps jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.POST("/state/device/check", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := CheckRightList(jwt.Impersonate, "deviceinstance", ids, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "deviceinstance", ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -57,31 +54,31 @@ func getRoutes() (router *jwt_http_router.Router) {
 			http.Error(res, "access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := checkDeviceOnlineStates(ids)
+		result, err := ctrl.CheckDeviceOnlineStates(ids)
 		if err != nil {
 			log.Println("ERROR: while checking online states", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(res).Json(result)
+		json.NewEncoder(res).Encode(result)
 	})
 
-	router.POST("/intern/state/device/check", func(res http.ResponseWriter, r *http.Request, ps jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.POST("/intern/state/device/check", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		result, err := checkDeviceOnlineStates(ids)
+		result, err := ctrl.CheckDeviceOnlineStates(ids)
 		if err != nil {
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(res).Json(result)
+		json.NewEncoder(res).Encode(result)
 	})
 
-	router.POST("/intern/state/gateway/check", func(res http.ResponseWriter, r *http.Request, ps jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.POST("/intern/state/gateway/check", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
@@ -89,34 +86,16 @@ func getRoutes() (router *jwt_http_router.Router) {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		result, err := checkGatewayOnlineStates(ids)
+		result, err := ctrl.CheckGatewayOnlineStates(ids)
 		if err != nil {
 			log.Println("ERROR:", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(res).Json(result)
+		json.NewEncoder(res).Encode(result)
 	})
 
-	router.POST("/intern/history/device/:duration", func(res http.ResponseWriter, r *http.Request, ps jwt_http_router.Params, jwt jwt_http_router.Jwt) {
-		ids := []string{}
-		duration := ps.ByName("duration")
-		err := json.NewDecoder(r.Body).Decode(&ids)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-		result, err := getResourcesHistory(ids, "device", duration)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		response.To(res).Json(result)
-	})
-
-	router.POST("/intern/history/gateway/:duration", func(res http.ResponseWriter, r *http.Request, ps jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.POST("/intern/history/device/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		duration := ps.ByName("duration")
 		err := json.NewDecoder(r.Body).Decode(&ids)
@@ -125,16 +104,34 @@ func getRoutes() (router *jwt_http_router.Router) {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		result, err := getResourcesHistory(ids, "gateway", duration)
+		result, err := ctrl.GetResourcesHistory(ids, "device", duration)
 		if err != nil {
 			log.Println("ERROR:", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(res).Json(result)
+		json.NewEncoder(res).Encode(result)
 	})
 
-	router.POST("/intern/logstarts/device", func(res http.ResponseWriter, r *http.Request, ps jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.POST("/intern/history/gateway/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		ids := []string{}
+		duration := ps.ByName("duration")
+		err := json.NewDecoder(r.Body).Decode(&ids)
+		if err != nil {
+			log.Println("ERROR:", err)
+			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+		result, err := ctrl.GetResourcesHistory(ids, "gateway", duration)
+		if err != nil {
+			log.Println("ERROR:", err)
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(res).Encode(result)
+	})
+
+	router.POST("/intern/logstarts/device", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
@@ -142,16 +139,16 @@ func getRoutes() (router *jwt_http_router.Router) {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		result, err := getResourcesLogstart(ids, "device")
+		result, err := ctrl.GetResourcesLogstart(ids, "device")
 		if err != nil {
 			log.Println("ERROR:", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(res).Json(result)
+		json.NewEncoder(res).Encode(result)
 	})
 
-	router.POST("/intern/logstarts/gateway", func(res http.ResponseWriter, r *http.Request, ps jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.POST("/intern/logstarts/gateway", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
@@ -159,16 +156,16 @@ func getRoutes() (router *jwt_http_router.Router) {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		result, err := getResourcesLogstart(ids, "gateway")
+		result, err := ctrl.GetResourcesLogstart(ids, "gateway")
 		if err != nil {
 			log.Println("ERROR:", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(res).Json(result)
+		json.NewEncoder(res).Encode(result)
 	})
 
-	router.POST("/intern/logedge/device/:duration", func(res http.ResponseWriter, r *http.Request, ps jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.POST("/intern/logedge/device/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		duration := ps.ByName("duration")
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
@@ -177,16 +174,16 @@ func getRoutes() (router *jwt_http_router.Router) {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		result, err := getResourcesLogEdge(ids, "device", duration)
+		result, err := ctrl.GetResourcesLogEdge(ids, "device", duration)
 		if err != nil {
 			log.Println("ERROR:", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(res).Json(result)
+		json.NewEncoder(res).Encode(result)
 	})
 
-	router.POST("/intern/logedge/gateway/:duration", func(res http.ResponseWriter, r *http.Request, ps jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.POST("/intern/logedge/gateway/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		duration := ps.ByName("duration")
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
@@ -195,13 +192,13 @@ func getRoutes() (router *jwt_http_router.Router) {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		result, err := getResourcesLogEdge(ids, "gateway", duration)
+		result, err := ctrl.GetResourcesLogEdge(ids, "gateway", duration)
 		if err != nil {
 			log.Println("ERROR:", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(res).Json(result)
+		json.NewEncoder(res).Encode(result)
 	})
 
 	return

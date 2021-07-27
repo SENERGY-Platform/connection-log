@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 InfAI (CC SES)
+ * Copyright 2019 InfAI (CC SES)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,32 @@
  * limitations under the License.
  */
 
-package main
+package util
 
 import (
-	"flag"
-	"github.com/SmartEnergyPlatform/connection-log/pkg/api"
-	"github.com/SmartEnergyPlatform/connection-log/pkg/configuration"
-	"github.com/SmartEnergyPlatform/connection-log/pkg/controller"
 	"log"
+	"net/http"
 )
 
-func main() {
-	configLocation := flag.String("config", "config.json", "configuration file")
-	flag.Parse()
-	conf, err := configuration.Load(*configLocation)
-	if err != nil {
-		log.Fatal(err)
+func NewLogger(handler http.Handler) *LoggerMiddleWare {
+	return &LoggerMiddleWare{handler: handler}
+}
+
+type LoggerMiddleWare struct {
+	handler http.Handler
+}
+
+func (this *LoggerMiddleWare) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	this.log(r)
+	if this.handler != nil {
+		this.handler.ServeHTTP(w, r)
+	} else {
+		http.Error(w, "Forbidden", 403)
 	}
-	ctrl, err := controller.New(conf)
-	if err != nil {
-		log.Fatal(err)
-	}
-	api.StartRest(conf, ctrl)
+}
+
+func (this *LoggerMiddleWare) log(request *http.Request) {
+	method := request.Method
+	path := request.URL
+	log.Printf("%v [%v] %v \n", request.RemoteAddr, method, path)
 }

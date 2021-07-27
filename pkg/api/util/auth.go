@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 InfAI (CC SES)
+ * Copyright 2021 InfAI (CC SES)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-package main
+package util
 
-import (
-	"github.com/SmartEnergyPlatform/jwt-http-router"
-)
+import "net/http"
 
-func CheckRightList(jwthttp jwt_http_router.JwtImpersonate, kind string, ids []string, right string) (ok bool, err error) {
-	oks := map[string]bool{}
-	err = jwthttp.PostJSON(Config.PermissionsUrl+"/ids/check/"+kind+"/"+right, ids, &oks)
-	if err != nil {
-		return false, err
-	}
-	for _, element := range oks {
-		if !element {
-			return false, err
-		}
-	}
-	return true, err
+func GetAuthToken(req *http.Request) string {
+	return req.Header.Get("Authorization")
 }
