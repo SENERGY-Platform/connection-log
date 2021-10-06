@@ -17,5 +17,7 @@
   "InfluxdbDb": "connectionlog",
   "InfluxdbUser": "",
   "InfluxdbPw": "",
-  "InfluxdbTimeout": 3
+  "InfluxdbTimeout": 3,
+
+  "HttpClientTimeout": "30s"
 }
