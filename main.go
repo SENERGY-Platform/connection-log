@@ -18,9 +18,9 @@ package main
 
 import (
 	"flag"
-	"github.com/SmartEnergyPlatform/connection-log/pkg/api"
-	"github.com/SmartEnergyPlatform/connection-log/pkg/configuration"
-	"github.com/SmartEnergyPlatform/connection-log/pkg/controller"
+	"github.com/SENERGY-Platform/connection-log/pkg/api"
+	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
+	"github.com/SENERGY-Platform/connection-log/pkg/controller"
 	"log"
 )
 

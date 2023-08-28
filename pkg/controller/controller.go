@@ -2,7 +2,7 @@ package controller
 
 import (
 	"context"
-	"github.com/SmartEnergyPlatform/connection-log/pkg/configuration"
+	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
 	influx "github.com/influxdata/influxdb1-client/v2"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,7 +17,7 @@ type Controller struct {
 }
 
 func New(config configuration.Config) (ctrl *Controller, err error) {
-	ctx, _ := context.WithTimeout(context.Background(), 10 * time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func New(config configuration.Config) (ctrl *Controller, err error) {
 	}, nil
 }
 
-func (this *Controller) Close(){
+func (this *Controller) Close() {
 	log.Println("close mongo connection:", this.mongo.Disconnect(nil))
 	log.Println("close influx connection:", this.influx.Close())
 }

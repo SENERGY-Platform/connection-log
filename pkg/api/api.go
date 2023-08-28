@@ -18,9 +18,9 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/SmartEnergyPlatform/connection-log/pkg/api/util"
-	"github.com/SmartEnergyPlatform/connection-log/pkg/configuration"
-	"github.com/SmartEnergyPlatform/connection-log/pkg/controller"
+	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
+	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
+	"github.com/SENERGY-Platform/connection-log/pkg/controller"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"

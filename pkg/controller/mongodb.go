@@ -18,10 +18,10 @@ package controller
 
 import (
 	"context"
-	"github.com/SmartEnergyPlatform/connection-log/pkg/configuration"
+	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 	"time"
 )
 
@@ -37,10 +37,10 @@ func createDeviceIndexes(config configuration.Config, db *mongo.Client) error {
 	collection := db.Database(config.MongoTable).Collection(config.DeviceStateCollection)
 	indexname := "device_1"
 	indexkey := "device"
-	direction := bsonx.Int32(1)
-	ctx, _ := context.WithTimeout(context.Background(), 10 * time.Second)
+	direction := 1
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys:    bsonx.Doc{{indexkey, direction}},
+		Keys:    bson.D{{indexkey, direction}},
 		Options: options.Index().SetName(indexname),
 	})
 	return err
@@ -50,10 +50,10 @@ func createGatewayIndexes(config configuration.Config, db *mongo.Client) error {
 	collection := db.Database(config.MongoTable).Collection(config.DeviceStateCollection)
 	indexname := "gateway_1"
 	indexkey := "gateway"
-	direction := bsonx.Int32(1)
-	ctx, _ := context.WithTimeout(context.Background(), 10 * time.Second)
+	direction := 1
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys:    bsonx.Doc{{indexkey, direction}},
+		Keys:    bson.D{{indexkey, direction}},
 		Options: options.Index().SetName(indexname),
 	})
 	return err
@@ -63,7 +63,7 @@ func (this *Controller) getDeviceStateCollection() *mongo.Collection {
 	return this.mongo.Database(this.config.MongoTable).Collection(this.config.DeviceStateCollection)
 }
 
-func (this *Controller) getGatewayStateCollection()*mongo.Collection {
+func (this *Controller) getGatewayStateCollection() *mongo.Collection {
 	return this.mongo.Database(this.config.MongoTable).Collection(this.config.GatewayStateCollection)
 }
 
