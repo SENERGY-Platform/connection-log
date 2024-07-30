@@ -30,7 +30,7 @@ import (
 )
 
 type Config struct {
-	MongoUrl               string
+	MongoUrl               string `config:"secret"`
 	MongoTable             string
 	DeviceStateCollection  string
 	GatewayStateCollection string
