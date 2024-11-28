@@ -17,15 +17,11 @@
 package controller
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"net/http"
-	"runtime/debug"
+	"github.com/SENERGY-Platform/permissions-v2/pkg/client"
 )
 
 func (this *Controller) CheckRightList(token string, kind string, ids []string, right string) (ok bool, err error) {
-	oks, err := CheckAccess(this.config.PermissionsUrl, token, kind, ids)
+	oks, err := CheckAccess(this.config.PermissionsV2Url, token, kind, ids)
 	if err != nil {
 		return false, err
 	}
@@ -37,48 +33,13 @@ func (this *Controller) CheckRightList(token string, kind string, ids []string, 
 	return true, err
 }
 
-func CheckAccess(permSearchUrl string, token string, kind string, ids []string) (result map[string]bool, err error) {
-	if len(ids) == 0 {
-		return map[string]bool{}, nil
-	}
-	query := QueryMessage{
-		Resource: kind,
-		CheckIds: &QueryCheckIds{
-			Ids:    ids,
-			Rights: "x",
-		},
-	}
-	buff := new(bytes.Buffer)
-	err = json.NewEncoder(buff).Encode(query)
+func CheckAccess(permV2Url string, token string, kind string, ids []string) (result map[string]bool, err error) {
+	result, err, _ = client.New(permV2Url).CheckMultiplePermissions(token, kind, ids, client.Execute)
 	if err != nil {
-		return result, err
-	}
-	req, err := http.NewRequest("POST", permSearchUrl+"/v3/query", buff)
-	if err != nil {
-		debug.PrintStack()
-		return result, err
-	}
-	req.Header.Set("Authorization", token)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		debug.PrintStack()
-		return result, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 300 {
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(resp.Body)
-		debug.PrintStack()
-		return result, errors.New(buf.String())
-	}
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	if err != nil {
-		debug.PrintStack()
 		return result, err
 	}
 	return result, nil
 }
-
 
 type QueryMessage struct {
 	Resource string         `json:"resource"`

@@ -11,7 +11,7 @@
   "ForceUser": "true",
   "ForceAuth": "true",
 
-  "PermissionsUrl": "http://permissionsearch:8080",
+  "PermissionsV2Url": "http://permissions-v2:8080",
 
   "InfluxdbUrl": "http://influxdb:8086",
   "InfluxdbDb": "connectionlog",

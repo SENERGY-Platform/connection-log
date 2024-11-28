@@ -35,8 +35,8 @@ type Config struct {
 	DeviceStateCollection  string
 	GatewayStateCollection string
 
-	ServerPort     string
-	PermissionsUrl string
+	ServerPort       string
+	PermissionsV2Url string
 
 	InfluxdbUrl     string
 	InfluxdbDb      string
