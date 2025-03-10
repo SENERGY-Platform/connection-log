@@ -18,6 +18,7 @@ package controller
 
 import (
 	"github.com/SENERGY-Platform/permissions-v2/pkg/client"
+	"log"
 )
 
 func (this *Controller) CheckRightList(token string, kind string, ids []string, right string) (ok bool, err error) {
@@ -31,6 +32,26 @@ func (this *Controller) CheckRightList(token string, kind string, ids []string, 
 		}
 	}
 	return true, err
+}
+
+func (this *Controller) PermissionsFilterIDs(token string, kind string, IDs []string) ([]string, error) {
+	result, err := CheckAccess(this.config.PermissionsV2Url, token, kind, IDs)
+	if err != nil {
+		return nil, err
+	}
+	var okIDs []string
+	var nOkIDs []string
+	for id, ok := range result {
+		if ok {
+			okIDs = append(okIDs, id)
+		} else {
+			nOkIDs = append(nOkIDs, id)
+		}
+	}
+	if len(nOkIDs) > 0 {
+		log.Printf("access denied for IDs: %v", nOkIDs)
+	}
+	return okIDs, nil
 }
 
 func CheckAccess(permV2Url string, token string, kind string, ids []string) (result map[string]bool, err error) {
