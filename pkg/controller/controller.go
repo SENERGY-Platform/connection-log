@@ -11,12 +11,17 @@ import (
 )
 
 type Controller struct {
-	config configuration.Config
-	mongo  *mongo.Client
-	influx influx.Client
+	config  configuration.Config
+	mongo   *mongo.Client
+	influx  influx.Client
+	queries *queryTemplates
 }
 
 func New(config configuration.Config) (ctrl *Controller, err error) {
+	qt, err := newQueryTemplates()
+	if err != nil {
+		return
+	}
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
@@ -40,9 +45,10 @@ func New(config configuration.Config) (ctrl *Controller, err error) {
 	}
 
 	return &Controller{
-		mongo:  mongoClient,
-		influx: influxClient,
-		config: config,
+		mongo:   mongoClient,
+		influx:  influxClient,
+		config:  config,
+		queries: qt,
 	}, nil
 }
 
