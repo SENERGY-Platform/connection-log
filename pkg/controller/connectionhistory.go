@@ -26,7 +26,6 @@ import (
 	"text/template"
 )
 
-
 func parseTemplate(tmplName string, tmplString string, values interface{}) (result string, err error) {
 	tmpl, err := template.New(tmplName).Parse(tmplString)
 	if err != nil {
@@ -38,27 +37,27 @@ func parseTemplate(tmplName string, tmplString string, values interface{}) (resu
 	return
 }
 
-//duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations
-func (this *Controller) GetResourceHistory(id string, kind string, duration string) (result interface{}, err error) {
-	templString := `SELECT * FROM "{{.Kind}}" WHERE time > now() - {{.Duration}} AND  "{{.Kind}}" = '{{.Id}}'`
-	query, err := parseTemplate("getResourceHistory", templString, map[string]string{"Id": id, "Kind": kind, "Duration": duration})
-	if err != nil {
-		return result, err
-	}
-	q := influx.NewQuery(query, this.config.InfluxdbDb, "s")
-	resp, err := this.influx.Query(q)
-	if err != nil {
-		log.Println("ERROR:", err, query)
-		return result, err
-	}
-	err = resp.Error()
-	if err != nil {
-		log.Println("ERROR:", err, query)
-	}
-	return resp.Results, err
-}
+////duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations
+//func (this *Controller) GetResourceHistory(id string, kind string, duration string) (result interface{}, err error) {
+//	templString := `SELECT * FROM "{{.Kind}}" WHERE time > now() - {{.Duration}} AND  "{{.Kind}}" = '{{.Id}}'`
+//	query, err := parseTemplate("getResourceHistory", templString, map[string]string{"Id": id, "Kind": kind, "Duration": duration})
+//	if err != nil {
+//		return result, err
+//	}
+//	q := influx.NewQuery(query, this.config.InfluxdbDb, "s")
+//	resp, err := this.influx.Query(q)
+//	if err != nil {
+//		log.Println("ERROR:", err, query)
+//		return result, err
+//	}
+//	err = resp.Error()
+//	if err != nil {
+//		log.Println("ERROR:", err, query)
+//	}
+//	return resp.Results, err
+//}
 
-//duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations
+// duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations
 func (this *Controller) GetResourcesHistory(ids []string, kind string, duration string) (result interface{}, err error) {
 	if len(ids) == 0 {
 		return []interface{}{map[string]interface{}{"Series": []interface{}{}}}, nil
@@ -166,18 +165,18 @@ func (this *Controller) GetResourcesLogEdge(ids []string, kind string, duration 
 	return
 }
 
-//duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations
-func (this *Controller) GetResourceKindHistory(kind string, duration string) (result interface{}, err error) {
-	templString := `SELECT * FROM "{{.Kind}}" WHERE time > now() - {{.Duration}} GROUP BY "{{.Kind}}"`
-	query, err := parseTemplate("getResourceKindHistory", templString, map[string]string{"Kind": kind, "Duration": duration})
-	if err != nil {
-		return result, err
-	}
-	q := influx.NewQuery(query, this.config.InfluxdbDb, "s")
-	resp, err := this.influx.Query(q)
-	if err != nil {
-		return result, err
-	}
-	err = resp.Error()
-	return resp.Results, err
-}
+////duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations
+//func (this *Controller) GetResourceKindHistory(kind string, duration string) (result interface{}, err error) {
+//	templString := `SELECT * FROM "{{.Kind}}" WHERE time > now() - {{.Duration}} GROUP BY "{{.Kind}}"`
+//	query, err := parseTemplate("getResourceKindHistory", templString, map[string]string{"Kind": kind, "Duration": duration})
+//	if err != nil {
+//		return result, err
+//	}
+//	q := influx.NewQuery(query, this.config.InfluxdbDb, "s")
+//	resp, err := this.influx.Query(q)
+//	if err != nil {
+//		return result, err
+//	}
+//	err = resp.Error()
+//	return resp.Results, err
+//}
