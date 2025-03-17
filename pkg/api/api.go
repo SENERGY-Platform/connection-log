@@ -17,7 +17,6 @@
 package api
 
 import (
-	"encoding/json"
 	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
 	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
 	"github.com/SENERGY-Platform/connection-log/pkg/controller"
@@ -26,180 +25,26 @@ import (
 	"net/http"
 )
 
-func StartRest(config configuration.Config, ctrl *controller.Controller) {
-	log.Println("start server on port: ", config.ServerPort)
-	httpHandler := getRoutes(config, ctrl)
-	corseHandler := util.NewCors(httpHandler)
-	logger := util.NewLogger(corseHandler)
-	log.Println(http.ListenAndServe(":"+config.ServerPort, logger))
+var routes = []func(ctrl *controller.Controller) (m, p string, h httprouter.Handle){
+	PostCheckDeviceOnlineStates,
+	PostInternCheckDeviceOnlineStates,
+	PostInternCheckGatewayOnlineStates,
+	PostInternGetDevicesHistory,
+	PostInternGetGatewaysHistory,
+	PostInternGetDevicesLogStart,
+	PostInternGetGatewaysLogStart,
+	PostInternGetDevicesLogEdge,
+	PostInternGetGatewaysLogEdge,
 }
 
-func getRoutes(config configuration.Config, ctrl *controller.Controller) (router *httprouter.Router) {
-	router = httprouter.New()
-
-	router.POST("/state/device/check", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		ids := []string{}
-		err := json.NewDecoder(r.Body).Decode(&ids)
-		if err != nil {
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "deviceinstance", ids, "r")
-		if err != nil {
-			log.Println("ERROR: while checking rights", err)
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if !ok {
-			http.Error(res, "access denied", http.StatusUnauthorized)
-			return
-		}
-		result, err := ctrl.CheckDeviceOnlineStates(ids)
-		if err != nil {
-			log.Println("ERROR: while checking online states", err)
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(res).Encode(result)
-	})
-
-	router.POST("/intern/state/device/check", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		ids := []string{}
-		err := json.NewDecoder(r.Body).Decode(&ids)
-		if err != nil {
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-		result, err := ctrl.CheckDeviceOnlineStates(ids)
-		if err != nil {
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(res).Encode(result)
-	})
-
-	router.POST("/intern/state/gateway/check", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		ids := []string{}
-		err := json.NewDecoder(r.Body).Decode(&ids)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-		result, err := ctrl.CheckGatewayOnlineStates(ids)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(res).Encode(result)
-	})
-
-	router.POST("/intern/history/device/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		ids := []string{}
-		duration := ps.ByName("duration")
-		err := json.NewDecoder(r.Body).Decode(&ids)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-		result, err := ctrl.GetResourcesHistory(ids, "device", duration)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(res).Encode(result)
-	})
-
-	router.POST("/intern/history/gateway/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		ids := []string{}
-		duration := ps.ByName("duration")
-		err := json.NewDecoder(r.Body).Decode(&ids)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-		result, err := ctrl.GetResourcesHistory(ids, "gateway", duration)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(res).Encode(result)
-	})
-
-	router.POST("/intern/logstarts/device", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		ids := []string{}
-		err := json.NewDecoder(r.Body).Decode(&ids)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-		result, err := ctrl.GetResourcesLogstart(ids, "device")
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(res).Encode(result)
-	})
-
-	router.POST("/intern/logstarts/gateway", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		ids := []string{}
-		err := json.NewDecoder(r.Body).Decode(&ids)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-		result, err := ctrl.GetResourcesLogstart(ids, "gateway")
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(res).Encode(result)
-	})
-
-	router.POST("/intern/logedge/device/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		duration := ps.ByName("duration")
-		ids := []string{}
-		err := json.NewDecoder(r.Body).Decode(&ids)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-		result, err := ctrl.GetResourcesLogEdge(ids, "device", duration)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(res).Encode(result)
-	})
-
-	router.POST("/intern/logedge/gateway/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		duration := ps.ByName("duration")
-		ids := []string{}
-		err := json.NewDecoder(r.Body).Decode(&ids)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-		result, err := ctrl.GetResourcesLogEdge(ids, "gateway", duration)
-		if err != nil {
-			log.Println("ERROR:", err)
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(res).Encode(result)
-	})
-
-	return
+func StartRest(config configuration.Config, ctrl *controller.Controller) {
+	log.Println("start server on port: ", config.ServerPort)
+	router := httprouter.New()
+	for _, rf := range routes {
+		m, p, hf := rf(ctrl)
+		router.Handle(m, p, hf)
+	}
+	corseHandler := util.NewCors(router)
+	logger := util.NewLogger(corseHandler)
+	log.Println(http.ListenAndServe(":"+config.ServerPort, logger))
 }
