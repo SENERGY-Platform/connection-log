@@ -11,32 +11,13 @@ import (
 	"time"
 )
 
-func (this *Controller) GetResourcesStates(ids []string, kind string, duration time.Duration, includeInit, includePrev bool) ([]model.States, error) {
-	if len(ids) == 0 {
+func (this *Controller) GetResourcesStates(query model.QueryHistorical) ([]model.States, error) {
+	if len(query.IDs) == 0 {
 		return []model.States{}, nil
 	}
-	timestamp := time.Now().UTC().Add(duration * -1)
-	statement, err := this.queries.GetResStatesRangeQuery(ids, kind, timestamp)
+	statement, prevID, seriesID, nextID, err := this.buildStatement(query)
 	if err != nil {
 		return []model.States{}, err
-	}
-	var initStmtID int
-	if includeInit {
-		stmt, err := this.queries.GetResStatesInitQuery(ids, kind)
-		if err != nil {
-			return []model.States{}, err
-		}
-		statement += stmt
-		initStmtID = 1
-	}
-	var prevStmtID int
-	if includePrev {
-		stmt, err := this.queries.GetResStatesPrevQuery(ids, kind, timestamp)
-		if err != nil {
-			return []model.States{}, err
-		}
-		statement += stmt
-		prevStmtID = initStmtID + 1
 	}
 	resp, err := this.influx.Query(influx.NewQuery(statement, this.config.InfluxdbDb, "s"))
 	if err != nil {
@@ -45,7 +26,7 @@ func (this *Controller) GetResourcesStates(ids []string, kind string, duration t
 	if err = resp.Error(); err != nil {
 		return []model.States{}, err
 	}
-	resMap, err := handleResults(resp.Results, kind, initStmtID, prevStmtID)
+	resMap, err := handleResults(resp.Results, query.Kind, prevID, seriesID, nextID)
 	if err != nil {
 		return []model.States{}, err
 	}
@@ -56,7 +37,7 @@ func (this *Controller) GetResourcesStates(ids []string, kind string, duration t
 	return result, nil
 }
 
-func handleResults(results []influx.Result, kind string, initStmtID, prevStmtID int) (map[string]model.States, error) {
+func handleResults(results []influx.Result, kind string, prevID, seriesID, nextID int) (map[string]model.States, error) {
 	if len(results) == 0 {
 		return nil, errors.New("no results")
 	}
@@ -65,16 +46,17 @@ func handleResults(results []influx.Result, kind string, initStmtID, prevStmtID 
 		if result.Err != "" {
 			return nil, errors.New(result.Err)
 		}
-		resType := 0
-		if result.StatementId > 0 {
-			switch result.StatementId {
-			case initStmtID:
-				resType = 1
-			case prevStmtID:
-				resType = 2
-			}
+		switch result.StatementId {
+		case seriesID:
+			handleSeries(resMap, kind, result.Series, 0)
+		case prevID:
+			handleSeries(resMap, kind, result.Series, 1)
+		case nextID:
+			handleSeries(resMap, kind, result.Series, 2)
+		default:
+			return nil, fmt.Errorf("unknown statement id: %d", result.StatementId)
 		}
-		handleSeries(resMap, kind, result.Series, resType)
+
 	}
 	return resMap, nil
 }
@@ -107,9 +89,9 @@ func handleRow(resMap map[string]model.States, rowValues [][]any, key string, re
 		}
 		switch resType {
 		case 1:
-			resource.InitState = &state
-		case 2:
 			resource.PrevState = &state
+		case 2:
+			resource.NextState = &state
 		}
 	} else {
 		for _, item := range rowValues {
@@ -145,4 +127,119 @@ func rowItemToState(item []any) (model.State, error) {
 		Time:      time.Unix(timeInt, 0).UTC(),
 		Connected: connected,
 	}, nil
+}
+
+func (this *Controller) buildStatement(query model.QueryHistorical) (string, int, int, int, error) {
+	hasRange := query.Range > 0
+	hasSince := !query.Since.IsZero()
+	hasUntil := !query.Until.IsZero()
+	switch {
+	case hasSince && hasUntil:
+		fmt.Println(0)
+		// Since && Until: time >= timestamp AND time <= timestamp
+		// include prev and next
+		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, query.Since)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, query.Kind, query.Since, query.Until)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		nextQ, err := this.queries.StateNextQuery(query.IDs, query.Kind, query.Until)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		return prevQ + seriesQ + nextQ, 0, 1, 2, nil
+	case hasRange && hasUntil:
+		fmt.Println(1)
+		// Range && Until: time >= (timestamp - duration) AND time <= timestamp
+		// include prev and next
+		since := query.Until.Add(time.Duration(query.Range) * -1)
+		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, since)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, query.Kind, since, query.Until)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		nextQ, err := this.queries.StateNextQuery(query.IDs, query.Kind, query.Until)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		return prevQ + seriesQ + nextQ, 0, 1, 2, nil
+	case hasRange && hasSince:
+		fmt.Println(2)
+		// Range && Since: time >= timestamp AND time <= (timestamp + duration)
+		// include prev and next
+		until := query.Since.Add(time.Duration(query.Range))
+		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, query.Since)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, query.Kind, query.Since, until)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		nextQ, err := this.queries.StateNextQuery(query.IDs, query.Kind, until)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		return prevQ + seriesQ + nextQ, 0, 1, 2, nil
+	case hasRange:
+		fmt.Println(3)
+		// Range: time >= (now - duration)
+		// include prev
+		timestamp := getCurrentTime(this.influxUTC).Add(time.Duration(query.Range) * -1)
+		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, timestamp)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		seriesQ, err := this.queries.StatesTimeGrtEqQuery(query.IDs, query.Kind, timestamp)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		return prevQ + seriesQ, 0, 1, -1, nil
+	case hasUntil:
+		fmt.Println(4)
+		// Until: time <= timestamp
+		// include next
+		seriesQ, err := this.queries.StatesTimeLesEqQuery(query.IDs, query.Kind, query.Until)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		nextQ, err := this.queries.StateNextQuery(query.IDs, query.Kind, query.Until)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		return seriesQ + nextQ, -1, 0, 1, nil
+	case hasSince:
+		fmt.Println(5)
+		// Since: time >= timestamp
+		// include prev
+		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, query.Since)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		seriesQ, err := this.queries.StatesTimeGrtEqQuery(query.IDs, query.Kind, query.Since)
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		return prevQ + seriesQ, 0, 1, -1, nil
+	default:
+		fmt.Println(6)
+		seriesQ, err := this.queries.StatesTimeLesEqQuery(query.IDs, query.Kind, getCurrentTime(this.influxUTC))
+		if err != nil {
+			return "", 0, 0, 0, err
+		}
+		return seriesQ, -1, 0, -1, nil
+	}
+}
+
+func getCurrentTime(utc bool) time.Time {
+	if utc {
+		return time.Now().UTC()
+	}
+	return time.Now()
 }
