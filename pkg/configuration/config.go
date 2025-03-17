@@ -43,6 +43,7 @@ type Config struct {
 	InfluxdbUser    string `config:"secret"`
 	InfluxdbPw      string `config:"secret"`
 	InfluxdbTimeout int64
+	InfluxdbUseUTC  bool
 
 	HttpClientTimeout string
 }

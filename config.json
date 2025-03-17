@@ -18,6 +18,7 @@
   "InfluxdbUser": "",
   "InfluxdbPw": "",
   "InfluxdbTimeout": 3,
+  "InfluxdbUseUTC": true,
 
   "HttpClientTimeout": "30s"
 }
