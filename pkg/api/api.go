@@ -51,6 +51,7 @@ func StartRest(config configuration.Config, ctrl *controller.Controller) {
 	for _, rf := range routes {
 		m, p, hf := rf(ctrl)
 		router.Handle(m, p, hf)
+		log.Println("added route:", m, p)
 	}
 	corseHandler := util.NewCors(router)
 	logger := util.NewLogger(corseHandler)
