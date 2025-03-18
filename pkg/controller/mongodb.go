@@ -18,7 +18,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
 	"github.com/SENERGY-Platform/connection-log/pkg/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -61,15 +60,11 @@ func createGatewayIndexes(config configuration.Config, db *mongo.Client) error {
 	return err
 }
 
-func (this *Controller) getMongoDBCollection(kind string) (*mongo.Collection, error) {
-	switch kind {
-	case model.DeviceKind:
-		return this.mongo.Database(this.config.MongoTable).Collection(this.config.DeviceStateCollection), nil
-	case model.GatewayKind:
-		return this.mongo.Database(this.config.MongoTable).Collection(this.config.GatewayStateCollection), nil
-	default:
-		return nil, fmt.Errorf("unknown kind '%s'", kind)
+func (this *Controller) getMongoDBCollection(kind string) *mongo.Collection {
+	if kind == model.GatewayKind {
+		return this.mongo.Database(this.config.MongoTable).Collection(this.config.GatewayStateCollection)
 	}
+	return this.mongo.Database(this.config.MongoTable).Collection(this.config.DeviceStateCollection)
 }
 
 func (this *Controller) getDeviceStateCollection() *mongo.Collection {
@@ -78,6 +73,12 @@ func (this *Controller) getDeviceStateCollection() *mongo.Collection {
 
 func (this *Controller) getGatewayStateCollection() *mongo.Collection {
 	return this.mongo.Database(this.config.MongoTable).Collection(this.config.GatewayStateCollection)
+}
+
+type State struct {
+	DeviceID  string `json:"device,omitempty" bson:"device,omitempty"`
+	GatewayID string `json:"gateway,omitempty" bson:"gateway,omitempty"`
+	Online    bool   `json:"online" bson:"online"`
 }
 
 type DeviceState struct {

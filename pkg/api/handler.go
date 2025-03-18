@@ -339,10 +339,6 @@ func PostQueryCurrentStatesMap(ctrl *controller.Controller) (string, string, htt
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err = validateKind(query.Kind); err != nil {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
 		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.Kind+"instance", query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -365,10 +361,6 @@ func PostQueryCurrentStatesList(ctrl *controller.Controller) (string, string, ht
 		var query model.QueryCurrent
 		err := json.NewDecoder(request.Body).Decode(&query)
 		if err != nil {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
-		if err = validateKind(query.Kind); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -461,10 +453,6 @@ func PostQueryHistoricalStatesMap(ctrl *controller.Controller) (string, string, 
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err = validateKind(query.Kind); err != nil {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
 		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.Kind+"instance", query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -487,10 +475,6 @@ func PostQueryHistoricalStatesList(ctrl *controller.Controller) (string, string,
 		var query model.QueryHistorical
 		err := json.NewDecoder(request.Body).Decode(&query)
 		if err != nil {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
-		if err = validateKind(query.Kind); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -531,11 +515,4 @@ func parseHistoricalStatesQuery(query url.Values) (rng time.Duration, since time
 		}
 	}
 	return
-}
-
-func validateKind(kind string) error {
-	if kind == model.DeviceKind || kind == model.GatewayKind {
-		return nil
-	}
-	return fmt.Errorf("invalid kind '%s'", kind)
 }
