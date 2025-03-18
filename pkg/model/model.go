@@ -28,7 +28,7 @@ type HistoricalStates struct {
 }
 
 type State struct {
-	Time      time.Time `json:"time"`
+	Time      time.Time `json:"time"` // JSON: The time is a quoted string in the RFC 3339 format.
 	Connected bool      `json:"connected"`
 }
 
@@ -41,9 +41,9 @@ type QueryCurrent = QueryBase
 
 type QueryHistorical struct {
 	QueryBase
-	Range Duration  `json:"range"` // Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-	Since time.Time `json:"since"` // The time must be a quoted string in the RFC 3339 format.
-	Until time.Time `json:"until"` // The time must be a quoted string in the RFC 3339 format.
+	Range Duration  `json:"range"` // JSON: Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	Since time.Time `json:"since"` // JSON: The time must be a quoted string in the RFC 3339 format.
+	Until time.Time `json:"until"` // JSON: The time must be a quoted string in the RFC 3339 format.
 }
 
 type Duration time.Duration
