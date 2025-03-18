@@ -35,6 +35,14 @@ var routes = []func(ctrl *controller.Controller) (m, p string, h httprouter.Hand
 	PostInternGetGatewaysLogStart,
 	PostInternGetDevicesLogEdge,
 	PostInternGetGatewaysLogEdge,
+	GetCurrentDeviceState,
+	GetCurrentGatewayState,
+	PostQueryCurrentStatesMap,
+	PostQueryCurrentStatesList,
+	GetHistoricalDeviceStates,
+	GetHistoricalGatewayStates,
+	PostQueryHistoricalStatesMap,
+	PostQueryHistoricalStatesList,
 }
 
 func StartRest(config configuration.Config, ctrl *controller.Controller) {
