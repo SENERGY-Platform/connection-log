@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
 	"github.com/SENERGY-Platform/connection-log/pkg/controller"
 	"github.com/SENERGY-Platform/connection-log/pkg/model"
@@ -296,6 +295,7 @@ func GetCurrentDeviceState(ctrl *controller.Controller) (string, string, httprou
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if err = json.NewEncoder(writer).Encode(res); err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -324,6 +324,7 @@ func GetCurrentGatewayState(ctrl *controller.Controller) (string, string, httpro
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if err = json.NewEncoder(writer).Encode(res); err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -349,6 +350,7 @@ func PostQueryCurrentStatesMap(ctrl *controller.Controller) (string, string, htt
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if err = json.NewEncoder(writer).Encode(res); err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -374,6 +376,7 @@ func PostQueryCurrentStatesList(ctrl *controller.Controller) (string, string, ht
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if err = json.NewEncoder(writer).Encode(res); err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -400,12 +403,14 @@ func GetHistoricalDeviceStates(ctrl *controller.Controller) (string, string, htt
 		rng, since, until, err := parseHistoricalStatesQuery(request.URL.Query())
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
 		}
 		res, err := ctrl.GetHistoricalStates(request.Context(), id, model.DeviceKind, rng, since, until)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if err = json.NewEncoder(writer).Encode(res); err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -432,12 +437,14 @@ func GetHistoricalGatewayStates(ctrl *controller.Controller) (string, string, ht
 		rng, since, until, err := parseHistoricalStatesQuery(request.URL.Query())
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
 		}
 		res, err := ctrl.GetHistoricalStates(request.Context(), id, model.GatewayKind, rng, since, until)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if err = json.NewEncoder(writer).Encode(res); err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -463,6 +470,7 @@ func PostQueryHistoricalStatesMap(ctrl *controller.Controller) (string, string, 
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if err = json.NewEncoder(writer).Encode(res); err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -488,6 +496,7 @@ func PostQueryHistoricalStatesList(ctrl *controller.Controller) (string, string,
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if err = json.NewEncoder(writer).Encode(res); err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
