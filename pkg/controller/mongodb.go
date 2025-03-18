@@ -18,7 +18,9 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
+	"github.com/SENERGY-Platform/connection-log/pkg/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -57,6 +59,17 @@ func createGatewayIndexes(config configuration.Config, db *mongo.Client) error {
 		Options: options.Index().SetName(indexname),
 	})
 	return err
+}
+
+func (this *Controller) getMongoDBCollection(kind string) (*mongo.Collection, error) {
+	switch kind {
+	case model.DeviceKind:
+		return this.mongo.Database(this.config.MongoTable).Collection(this.config.DeviceStateCollection), nil
+	case model.GatewayKind:
+		return this.mongo.Database(this.config.MongoTable).Collection(this.config.GatewayStateCollection), nil
+	default:
+		return nil, fmt.Errorf("unknown kind '%s'", kind)
+	}
 }
 
 func (this *Controller) getDeviceStateCollection() *mongo.Collection {
