@@ -32,6 +32,7 @@ import (
 type Config struct {
 	MongoUrl               string `config:"secret"`
 	MongoTable             string
+	MongodbTimeout         int64
 	DeviceStateCollection  string
 	GatewayStateCollection string
 
