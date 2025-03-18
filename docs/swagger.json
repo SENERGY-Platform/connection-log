@@ -1,0 +1,641 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/current/devices/{id}": {
+            "get": {
+                "description": "Get the current state of a device.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Current states"
+                ],
+                "summary": "Get current device state",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Auth token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "device state",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResourceCurrentState"
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/current/gateways/{id}": {
+            "get": {
+                "description": "Get the current state of a gateway.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Current states"
+                ],
+                "summary": "Get current gateway state",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Auth token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "gateway id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "gateway state",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResourceCurrentState"
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/current/query/list": {
+            "post": {
+                "description": "Query current states for multiple IDs by resource kind (device, gateway).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Current states"
+                ],
+                "summary": "Query current states",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Auth token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "query object",
+                        "name": "query",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QueryCurrent"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "current states",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.ResourceCurrentState"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/current/query/map": {
+            "post": {
+                "description": "Query current states for multiple IDs by resource kind (device, gateway).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Current states"
+                ],
+                "summary": "Query current states",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Auth token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "query object",
+                        "name": "query",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QueryCurrent"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "current states mapped to IDs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/historical/devices/{id}": {
+            "get": {
+                "description": "Get the historical states of a device.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Historical states"
+                ],
+                "summary": "Get historical device states",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Auth token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "time range e.g. 24h, valid units are 'ns', 'us' (or 'µs'), 'ms', 's', 'm', 'h'",
+                        "name": "range",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "timestamp in RFC 3339 format, can be combined with 'range' or 'until'",
+                        "name": "since",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "timestamp in RFC 3339 format, can be combined with 'range' or 'since'",
+                        "name": "until",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "device state",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResourceHistoricalStates"
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/historical/gateways/{id}": {
+            "get": {
+                "description": "Get the historical states of a gateway.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Historical states"
+                ],
+                "summary": "Get historical gateway states",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Auth token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "gateway id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "time range e.g. 24h, valid units are 'ns', 'us' (or 'µs'), 'ms', 's', 'm', 'h'",
+                        "name": "range",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "timestamp in RFC 3339 format, can be combined with 'range' or 'until'",
+                        "name": "since",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "timestamp in RFC 3339 format, can be combined with 'range' or 'since'",
+                        "name": "until",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "gateway states",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResourceHistoricalStates"
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/historical/query/list": {
+            "post": {
+                "description": "Query current historical states for multiple IDs by resource kind (device, gateway).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Historical states"
+                ],
+                "summary": "Query historical states",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Auth token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "query object",
+                        "name": "query",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QueryHistorical"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "historical states",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.ResourceHistoricalStates"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/historical/query/map": {
+            "post": {
+                "description": "Query current historical states for multiple IDs by resource kind (device, gateway).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Historical states"
+                ],
+                "summary": "Query historical states",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Auth token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "query object",
+                        "name": "query",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QueryHistorical"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "historical states mapped to IDs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/model.HistoricalStates"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.Duration": {
+            "type": "integer",
+            "enum": [
+                1,
+                1000,
+                1000000,
+                1000000000,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000
+            ],
+            "x-enum-varnames": [
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute"
+            ]
+        },
+        "model.HistoricalStates": {
+            "type": "object",
+            "properties": {
+                "next_state": {
+                    "description": "First state succeeding the selected time frame.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.State"
+                        }
+                    ]
+                },
+                "prev_state": {
+                    "description": "Last state preceding the selected time frame.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.State"
+                        }
+                    ]
+                },
+                "states": {
+                    "description": "All states within the selected time frame.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.State"
+                    }
+                }
+            }
+        },
+        "model.QueryCurrent": {
+            "type": "object",
+            "properties": {
+                "ids": {
+                    "description": "IDs for witch states are to be retrieved.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "kind": {
+                    "description": "Valid values are \"device\" and \"gateway\".",
+                    "type": "string"
+                }
+            }
+        },
+        "model.QueryHistorical": {
+            "type": "object",
+            "properties": {
+                "ids": {
+                    "description": "IDs for witch states are to be retrieved.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "kind": {
+                    "description": "Valid values are \"device\" and \"gateway\".",
+                    "type": "string"
+                },
+                "range": {
+                    "description": "Time range e.g. 24h, valid units are \"ns\", \"us\" (or \"µs\"), \"ms\", \"s\", \"m\", \"h\".",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.Duration"
+                        }
+                    ]
+                },
+                "since": {
+                    "description": "Timestamp in RFC 3339 format, can be combined with 'range' or 'until'.",
+                    "type": "string"
+                },
+                "until": {
+                    "description": "Timestamp in RFC 3339 format, can be combined with 'range' or 'since'.",
+                    "type": "string"
+                }
+            }
+        },
+        "model.ResourceCurrentState": {
+            "type": "object",
+            "properties": {
+                "connected": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ResourceHistoricalStates": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "next_state": {
+                    "description": "First state succeeding the selected time frame.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.State"
+                        }
+                    ]
+                },
+                "prev_state": {
+                    "description": "Last state preceding the selected time frame.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.State"
+                        }
+                    ]
+                },
+                "states": {
+                    "description": "All states within the selected time frame.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.State"
+                    }
+                }
+            }
+        },
+        "model.State": {
+            "type": "object",
+            "properties": {
+                "connected": {
+                    "type": "boolean"
+                },
+                "time": {
+                    "description": "Timestamp in RFC 3339 format.",
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
