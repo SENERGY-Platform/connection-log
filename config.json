@@ -1,6 +1,7 @@
 {
   "MongoUrl": "mongodb://mongo",
   "MongoTable": "connectionlog",
+  "MongodbTimeout": 5,
 
   "DeviceStateCollection": "devicestate",
   "GatewayStateCollection": "gatewaystate",
@@ -17,7 +18,7 @@
   "InfluxdbDb": "connectionlog",
   "InfluxdbUser": "",
   "InfluxdbPw": "",
-  "InfluxdbTimeout": 3,
+  "InfluxdbTimeout": 5,
   "InfluxdbUseUTC": true,
 
   "HttpClientTimeout": "30s"
