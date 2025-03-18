@@ -45,6 +45,16 @@ func PostInternCheckDeviceOnlineStates(ctrl *controller.Controller) (string, str
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "deviceinstance", ids, "r")
+		if err != nil {
+			log.Println("ERROR: while checking rights", err)
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(res, "access denied", http.StatusUnauthorized)
+			return
+		}
 		result, err := ctrl.CheckDeviceOnlineStates(ids)
 		if err != nil {
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -61,6 +71,16 @@ func PostInternCheckGatewayOnlineStates(ctrl *controller.Controller) (string, st
 		if err != nil {
 			log.Println("ERROR:", err)
 			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "gatewayinstance", ids, "r")
+		if err != nil {
+			log.Println("ERROR: while checking rights", err)
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(res, "access denied", http.StatusUnauthorized)
 			return
 		}
 		result, err := ctrl.CheckGatewayOnlineStates(ids)
@@ -83,6 +103,16 @@ func PostInternGetDevicesHistory(ctrl *controller.Controller) (string, string, h
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "deviceinstance", ids, "r")
+		if err != nil {
+			log.Println("ERROR: while checking rights", err)
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(res, "access denied", http.StatusUnauthorized)
+			return
+		}
 		result, err := ctrl.GetResourcesHistory(ids, "device", duration)
 		if err != nil {
 			log.Println("ERROR:", err)
@@ -101,6 +131,16 @@ func PostInternGetGatewaysHistory(ctrl *controller.Controller) (string, string, 
 		if err != nil {
 			log.Println("ERROR:", err)
 			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "gatewayinstance", ids, "r")
+		if err != nil {
+			log.Println("ERROR: while checking rights", err)
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(res, "access denied", http.StatusUnauthorized)
 			return
 		}
 		result, err := ctrl.GetResourcesHistory(ids, "gateway", duration)
@@ -122,6 +162,16 @@ func PostInternGetDevicesLogStart(ctrl *controller.Controller) (string, string, 
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "deviceinstance", ids, "r")
+		if err != nil {
+			log.Println("ERROR: while checking rights", err)
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(res, "access denied", http.StatusUnauthorized)
+			return
+		}
 		result, err := ctrl.GetResourcesLogstart(ids, "device")
 		if err != nil {
 			log.Println("ERROR:", err)
@@ -139,6 +189,16 @@ func PostInternGetGatewaysLogStart(ctrl *controller.Controller) (string, string,
 		if err != nil {
 			log.Println("ERROR:", err)
 			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "gatewayinstance", ids, "r")
+		if err != nil {
+			log.Println("ERROR: while checking rights", err)
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(res, "access denied", http.StatusUnauthorized)
 			return
 		}
 		result, err := ctrl.GetResourcesLogstart(ids, "gateway")
@@ -161,6 +221,16 @@ func PostInternGetDevicesLogEdge(ctrl *controller.Controller) (string, string, h
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "deviceinstance", ids, "r")
+		if err != nil {
+			log.Println("ERROR: while checking rights", err)
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(res, "access denied", http.StatusUnauthorized)
+			return
+		}
 		result, err := ctrl.GetResourcesLogEdge(ids, "device", duration)
 		if err != nil {
 			log.Println("ERROR:", err)
@@ -179,6 +249,16 @@ func PostInternGetGatewaysLogEdge(ctrl *controller.Controller) (string, string, 
 		if err != nil {
 			log.Println("ERROR:", err)
 			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "gatewayinstance", ids, "r")
+		if err != nil {
+			log.Println("ERROR: while checking rights", err)
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(res, "access denied", http.StatusUnauthorized)
 			return
 		}
 		result, err := ctrl.GetResourcesLogEdge(ids, "gateway", duration)
