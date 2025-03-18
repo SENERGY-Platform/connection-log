@@ -24,7 +24,7 @@ import (
 
 func (this *Controller) CheckDeviceOnlineStates(ids []string) (result map[string]bool, err error) {
 	result = map[string]bool{}
-	ctx, _ := context.WithTimeout(context.Background(), 10 * time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	cursor, err := this.getDeviceStateCollection().Find(ctx, bson.M{"device": bson.M{"$in": ids}})
 	if err != nil {
 		return result, err
@@ -43,7 +43,7 @@ func (this *Controller) CheckDeviceOnlineStates(ids []string) (result map[string
 
 func (this *Controller) CheckGatewayOnlineStates(ids []string) (result map[string]bool, err error) {
 	result = map[string]bool{}
-	ctx, _ := context.WithTimeout(context.Background(), 10 * time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	cursor, err := this.getGatewayStateCollection().Find(ctx, bson.M{"gateway": bson.M{"$in": ids}})
 	if err != nil {
 		return result, err
@@ -59,4 +59,3 @@ func (this *Controller) CheckGatewayOnlineStates(ids []string) (result map[strin
 	err = cursor.Err()
 	return
 }
-
