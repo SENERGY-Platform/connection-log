@@ -345,6 +345,22 @@ func PostQueryHistoricalStatesList(ctrl *controller.Controller) (string, string,
 	}
 }
 
+func GetSwaggerDoc(_ *controller.Controller) (string, string, httprouter.Handle) {
+	return http.MethodGet, "/doc", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		file, err := os.Open("docs/swagger.json")
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer file.Close()
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if _, err = io.Copy(writer, file); err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 func parseHistoricalStatesQuery(query url.Values) (rng time.Duration, since time.Time, until time.Time, err error) {
 	if rngStr := query.Get("range"); rngStr != "" {
 		rng, err = time.ParseDuration(rngStr)

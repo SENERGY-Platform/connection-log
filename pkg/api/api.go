@@ -43,6 +43,7 @@ var routes = []func(ctrl *controller.Controller) (m, p string, h httprouter.Hand
 	GetHistoricalGatewayStates,
 	PostQueryHistoricalStatesMap,
 	PostQueryHistoricalStatesList,
+	GetSwaggerDoc,
 }
 
 func StartRest(config configuration.Config, ctrl *controller.Controller) {
