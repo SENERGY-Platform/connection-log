@@ -6,11 +6,25 @@ import (
 	"time"
 )
 
-type States struct {
-	ResourceID string  `json:"resource_id"`
-	PrevState  *State  `json:"prev_state"`
-	States     []State `json:"states"`
-	NextState  *State  `json:"next_state"`
+const (
+	DeviceKind  = "device"
+	GatewayKind = "gateway"
+)
+
+type ResourceCurrentState struct {
+	ID        string `json:"id"`
+	Connected bool   `json:"connected"`
+}
+
+type ResourceHistoricalStates struct {
+	ID string `json:"id"`
+	HistoricalStates
+}
+
+type HistoricalStates struct {
+	PrevState *State  `json:"prev_state"`
+	States    []State `json:"states"`
+	NextState *State  `json:"next_state"`
 }
 
 type State struct {

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,37 +12,71 @@ import (
 	"time"
 )
 
-func (this *Controller) GetResourcesStates(query model.QueryHistorical) ([]model.States, error) {
+func (this *Controller) GetHistoricalStates(ctx context.Context, id, kind string, rng time.Duration, since, until time.Time) (model.ResourceHistoricalStates, error) {
+	resMap, err := this.QueryHistoricalStatesMap(ctx, model.QueryHistorical{
+		QueryBase: model.QueryBase{
+			Kind: kind,
+			IDs:  []string{id},
+		},
+		Range: model.Duration(rng),
+		Since: since,
+		Until: until,
+	})
+	if err != nil {
+		return model.ResourceHistoricalStates{}, err
+	}
+	item, ok := resMap[id]
+	if !ok {
+		return model.ResourceHistoricalStates{}, errors.New("not found")
+	}
+	return model.ResourceHistoricalStates{
+		ID:               id,
+		HistoricalStates: item,
+	}, nil
+}
+
+func (this *Controller) QueryHistoricalStatesSlice(ctx context.Context, query model.QueryHistorical) ([]model.ResourceHistoricalStates, error) {
+	resMap, err := this.QueryHistoricalStatesMap(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	sl := make([]model.ResourceHistoricalStates, 0, len(resMap))
+	for id, resource := range resMap {
+		sl = append(sl, model.ResourceHistoricalStates{
+			ID:               id,
+			HistoricalStates: resource,
+		})
+	}
+	return sl, nil
+}
+
+func (this *Controller) QueryHistoricalStatesMap(_ context.Context, query model.QueryHistorical) (map[string]model.HistoricalStates, error) {
 	if len(query.IDs) == 0 {
-		return []model.States{}, nil
+		return nil, nil
 	}
 	statement, prevID, seriesID, nextID, err := this.buildStatement(query)
 	if err != nil {
-		return []model.States{}, err
+		return nil, err
 	}
 	resp, err := this.influx.Query(influx.NewQuery(statement, this.config.InfluxdbDb, "s"))
 	if err != nil {
-		return []model.States{}, err
+		return nil, err
 	}
 	if err = resp.Error(); err != nil {
-		return []model.States{}, err
+		return nil, err
 	}
 	resMap, err := handleResults(resp.Results, query.Kind, prevID, seriesID, nextID)
 	if err != nil {
-		return []model.States{}, err
+		return nil, err
 	}
-	result := make([]model.States, 0, len(resMap))
-	for _, resource := range resMap {
-		result = append(result, resource)
-	}
-	return result, nil
+	return resMap, nil
 }
 
-func handleResults(results []influx.Result, kind string, prevID, seriesID, nextID int) (map[string]model.States, error) {
+func handleResults(results []influx.Result, kind string, prevID, seriesID, nextID int) (map[string]model.HistoricalStates, error) {
 	if len(results) == 0 {
 		return nil, errors.New("no results")
 	}
-	resMap := make(map[string]model.States)
+	resMap := make(map[string]model.HistoricalStates)
 	for _, result := range results {
 		if result.Err != "" {
 			return nil, errors.New(result.Err)
@@ -61,7 +96,7 @@ func handleResults(results []influx.Result, kind string, prevID, seriesID, nextI
 	return resMap, nil
 }
 
-func handleSeries(resMap map[string]model.States, kind string, series []models.Row, resType int) {
+func handleSeries(resMap map[string]model.HistoricalStates, kind string, series []models.Row, resType int) {
 	for _, row := range series {
 		if len(row.Values) == 0 {
 			continue
@@ -77,11 +112,8 @@ func handleSeries(resMap map[string]model.States, kind string, series []models.R
 	}
 }
 
-func handleRow(resMap map[string]model.States, rowValues [][]any, key string, resType int) error {
-	resource, ok := resMap[key]
-	if !ok {
-		resource.ResourceID = key
-	}
+func handleRow(resMap map[string]model.HistoricalStates, rowValues [][]any, key string, resType int) error {
+	resource := resMap[key]
 	if resType > 0 {
 		state, err := rowItemToState(rowValues[0])
 		if err != nil {
@@ -135,7 +167,6 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 	hasUntil := !query.Until.IsZero()
 	switch {
 	case hasSince && hasUntil:
-		fmt.Println(0)
 		// Since && Until: time >= timestamp AND time <= timestamp
 		// include prev and next
 		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, query.Since)
@@ -152,7 +183,6 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 		}
 		return prevQ + seriesQ + nextQ, 0, 1, 2, nil
 	case hasRange && hasUntil:
-		fmt.Println(1)
 		// Range && Until: time >= (timestamp - duration) AND time <= timestamp
 		// include prev and next
 		since := query.Until.Add(time.Duration(query.Range) * -1)
@@ -170,7 +200,6 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 		}
 		return prevQ + seriesQ + nextQ, 0, 1, 2, nil
 	case hasRange && hasSince:
-		fmt.Println(2)
 		// Range && Since: time >= timestamp AND time <= (timestamp + duration)
 		// include prev and next
 		until := query.Since.Add(time.Duration(query.Range))
@@ -188,7 +217,6 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 		}
 		return prevQ + seriesQ + nextQ, 0, 1, 2, nil
 	case hasRange:
-		fmt.Println(3)
 		// Range: time >= (now - duration)
 		// include prev
 		timestamp := getCurrentTime(this.config.InfluxdbUseUTC).Add(time.Duration(query.Range) * -1)
@@ -202,7 +230,6 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 		}
 		return prevQ + seriesQ, 0, 1, -1, nil
 	case hasUntil:
-		fmt.Println(4)
 		// Until: time <= timestamp
 		// include next
 		seriesQ, err := this.queries.StatesTimeLesEqQuery(query.IDs, query.Kind, query.Until)
@@ -215,7 +242,6 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 		}
 		return seriesQ + nextQ, -1, 0, 1, nil
 	case hasSince:
-		fmt.Println(5)
 		// Since: time >= timestamp
 		// include prev
 		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, query.Since)
