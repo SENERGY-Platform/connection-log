@@ -22,28 +22,28 @@ type ResourceHistoricalStates struct {
 }
 
 type HistoricalStates struct {
-	PrevState *State  `json:"prev_state"`
-	States    []State `json:"states"`
-	NextState *State  `json:"next_state"`
+	PrevState *State  `json:"prev_state"` // Last state preceding the selected time frame.
+	States    []State `json:"states"`     // All states within the selected time frame.
+	NextState *State  `json:"next_state"` // First state succeeding the selected time frame.
 }
 
 type State struct {
-	Time      time.Time `json:"time"` // JSON: The time is a quoted string in the RFC 3339 format.
+	Time      time.Time `json:"time"` // Timestamp in RFC 3339 format.
 	Connected bool      `json:"connected"`
 }
 
 type QueryBase struct {
-	Kind string   `json:"kind"`
-	IDs  []string `json:"ids"`
+	Kind string   `json:"kind"` // Valid values are "device" and "gateway".
+	IDs  []string `json:"ids"`  // IDs for witch states are to be retrieved.
 }
 
 type QueryCurrent = QueryBase
 
 type QueryHistorical struct {
 	QueryBase
-	Range Duration  `json:"range"` // JSON: Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-	Since time.Time `json:"since"` // JSON: The time must be a quoted string in the RFC 3339 format.
-	Until time.Time `json:"until"` // JSON: The time must be a quoted string in the RFC 3339 format.
+	Range Duration  `json:"range"` // Time range e.g. 24h, valid units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	Since time.Time `json:"since"` // Timestamp in RFC 3339 format, can be combined with 'range' or 'until'.
+	Until time.Time `json:"until"` // Timestamp in RFC 3339 format, can be combined with 'range' or 'since'.
 }
 
 type Duration time.Duration
