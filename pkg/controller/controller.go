@@ -11,11 +11,10 @@ import (
 )
 
 type Controller struct {
-	config    configuration.Config
-	mongo     *mongo.Client
-	influx    influx.Client
-	queries   *queryTemplates
-	influxUTC bool
+	config  configuration.Config
+	mongo   *mongo.Client
+	influx  influx.Client
+	queries *queryTemplates
 }
 
 func New(config configuration.Config) (ctrl *Controller, err error) {
@@ -46,11 +45,10 @@ func New(config configuration.Config) (ctrl *Controller, err error) {
 	}
 
 	return &Controller{
-		mongo:     mongoClient,
-		influx:    influxClient,
-		config:    config,
-		queries:   qt,
-		influxUTC: config.InfluxdbUseUTC,
+		mongo:   mongoClient,
+		influx:  influxClient,
+		config:  config,
+		queries: qt,
 	}, nil
 }
 

@@ -191,7 +191,7 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 		fmt.Println(3)
 		// Range: time >= (now - duration)
 		// include prev
-		timestamp := getCurrentTime(this.influxUTC).Add(time.Duration(query.Range) * -1)
+		timestamp := getCurrentTime(this.config.InfluxdbUseUTC).Add(time.Duration(query.Range) * -1)
 		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, timestamp)
 		if err != nil {
 			return "", 0, 0, 0, err
@@ -228,8 +228,7 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 		}
 		return prevQ + seriesQ, 0, 1, -1, nil
 	default:
-		fmt.Println(6)
-		seriesQ, err := this.queries.StatesTimeLesEqQuery(query.IDs, query.Kind, getCurrentTime(this.influxUTC))
+		seriesQ, err := this.queries.StatesTimeLesEqQuery(query.IDs, query.Kind, getCurrentTime(this.config.InfluxdbUseUTC))
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
