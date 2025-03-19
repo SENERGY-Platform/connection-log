@@ -1,8 +1,15 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "Provides HTTP-API to request current and historical connection log.",
+        "title": "Connection Log API",
+        "contact": {},
+        "license": {
+            "name": "Apache-2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        }
     },
+    "basePath": "/",
     "paths": {
         "/current/devices/{id}": {
             "get": {
@@ -1131,26 +1138,32 @@
         "model.Duration": {
             "type": "integer",
             "enum": [
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
                 1000000000,
+                60000000000,
+                3600000000000,
                 1,
                 1000,
                 1000000,
-                1000000000,
-                60000000000
+                1000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
                 "Second",
+                "Minute",
+                "Hour",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
-                "Second",
-                "Minute"
+                "Second"
             ]
         },
         "model.HistoricalStates": {
