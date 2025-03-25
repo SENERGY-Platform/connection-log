@@ -9,7 +9,7 @@ import (
 )
 
 func (this *Controller) GetCurrentState(ctx context.Context, id, kind string) (model.ResourceCurrentState, error) {
-	if err := validateKind(kind); err != nil {
+	if err := ValidateKind(kind); err != nil {
 		return model.ResourceCurrentState{}, err
 	}
 	ctxWt, cf := context.WithTimeout(ctx, time.Duration(this.config.MongodbTimeout)*time.Second)
@@ -44,7 +44,7 @@ func (this *Controller) QueryCurrentStatesSlice(ctx context.Context, query model
 }
 
 func (this *Controller) QueryCurrentStatesMap(ctx context.Context, query model.QueryCurrent) (map[string]bool, error) {
-	if err := validateKind(query.Kind); err != nil {
+	if err := ValidateKind(query.Kind); err != nil {
 		return nil, err
 	}
 	ctxWt, cf := context.WithTimeout(ctx, time.Duration(this.config.MongodbTimeout)*time.Second)
@@ -71,7 +71,7 @@ func (this *Controller) QueryCurrentStatesMap(ctx context.Context, query model.Q
 	return states, nil
 }
 
-func validateKind(kind string) error {
+func ValidateKind(kind string) error {
 	if kind == model.DeviceKind || kind == model.GatewayKind {
 		return nil
 	}

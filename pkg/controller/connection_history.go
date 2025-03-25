@@ -51,7 +51,7 @@ func (this *Controller) QueryHistoricalStatesSlice(ctx context.Context, query mo
 }
 
 func (this *Controller) QueryHistoricalStatesMap(_ context.Context, query model.QueryHistorical) (map[string]model.HistoricalStates, error) {
-	if err := validateKind(query.Kind); err != nil {
+	if err := ValidateKind(query.Kind); err != nil {
 		return nil, err
 	}
 	if len(query.IDs) == 0 {
