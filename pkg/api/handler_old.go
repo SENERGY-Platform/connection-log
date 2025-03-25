@@ -30,7 +30,7 @@ func PostCheckDeviceOnlineStates(ctrl *controller.Controller) (string, string, h
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "deviceinstance", ids, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "devices", ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -70,7 +70,7 @@ func PostInternCheckDeviceOnlineStates(ctrl *controller.Controller) (string, str
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "deviceinstance", ids, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "devices", ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -110,7 +110,7 @@ func PostInternCheckGatewayOnlineStates(ctrl *controller.Controller) (string, st
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "gatewayinstance", ids, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "hubs", ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -153,7 +153,7 @@ func PostInternGetDevicesHistory(ctrl *controller.Controller) (string, string, h
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "deviceinstance", ids, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "devices", ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -196,7 +196,7 @@ func PostInternGetGatewaysHistory(ctrl *controller.Controller) (string, string, 
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "gatewayinstance", ids, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "hubs", ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -237,7 +237,7 @@ func PostInternGetDevicesLogStart(ctrl *controller.Controller) (string, string, 
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "deviceinstance", ids, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "devices", ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -278,7 +278,7 @@ func PostInternGetGatewaysLogStart(ctrl *controller.Controller) (string, string,
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "gatewayinstance", ids, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "hubs", ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -321,7 +321,7 @@ func PostInternGetDevicesLogEdge(ctrl *controller.Controller) (string, string, h
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "deviceinstance", ids, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "devices", ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -364,7 +364,7 @@ func PostInternGetGatewaysLogEdge(ctrl *controller.Controller) (string, string, 
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "gatewayinstance", ids, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "hubs", ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)

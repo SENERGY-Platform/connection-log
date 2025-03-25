@@ -32,7 +32,7 @@ func GetCurrentDeviceState(ctrl *controller.Controller) (string, string, httprou
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "deviceinstance", []string{id}, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "devices", []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -73,7 +73,7 @@ func GetCurrentGatewayState(ctrl *controller.Controller) (string, string, httpro
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "gatewayinstance", []string{id}, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "hubs", []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -193,7 +193,7 @@ func GetHistoricalDeviceStates(ctrl *controller.Controller) (string, string, htt
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "deviceinstance", []string{id}, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "devices", []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -242,7 +242,7 @@ func GetHistoricalGatewayStates(ctrl *controller.Controller) (string, string, ht
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "gatewayinstance", []string{id}, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "hubs", []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
