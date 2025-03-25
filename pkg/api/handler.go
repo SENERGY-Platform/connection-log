@@ -13,6 +13,18 @@ import (
 	"time"
 )
 
+const (
+	pathParamID     = "id"
+	queryParamRange = "range"
+	queryParamSince = "since"
+	queryParamUntil = "until"
+)
+
+var permKindMap = map[string]string{
+	model.DeviceKind:  model.PermDeviceKind,
+	model.GatewayKind: model.PermGatewayKind,
+}
+
 // GetCurrentDeviceState godoc
 // @Summary Get current device state
 // @Description Get the current state of a device.
@@ -26,13 +38,13 @@ import (
 // @Failure	500 {string} string "error message"
 // @Router /current/devices/{id} [get]
 func GetCurrentDeviceState(ctrl *controller.Controller) (string, string, httprouter.Handle) {
-	return http.MethodGet, "/current/devices/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+	return http.MethodGet, "/current/devices/:" + pathParamID, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		id := params.ByName(pathParamID)
 		if id == "" {
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "devices", []string{id}, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), model.PermDeviceKind, []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -67,13 +79,13 @@ func GetCurrentDeviceState(ctrl *controller.Controller) (string, string, httprou
 // @Failure	500 {string} string "error message"
 // @Router /current/gateways/{id} [get]
 func GetCurrentGatewayState(ctrl *controller.Controller) (string, string, httprouter.Handle) {
-	return http.MethodGet, "/current/gateways/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+	return http.MethodGet, "/current/gateways/:" + pathParamID, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		id := params.ByName(pathParamID)
 		if id == "" {
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "hubs", []string{id}, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), model.PermGatewayKind, []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -115,7 +127,11 @@ func PostQueryCurrentStatesMap(ctrl *controller.Controller) (string, string, htt
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.Kind+"instance", query.IDs)
+		if err = controller.ValidateKind(query.Kind); err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), permKindMap[query.Kind], query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -153,7 +169,11 @@ func PostQueryCurrentStatesList(ctrl *controller.Controller) (string, string, ht
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.Kind+"instance", query.IDs)
+		if err = controller.ValidateKind(query.Kind); err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), permKindMap[query.Kind], query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -187,13 +207,13 @@ func PostQueryCurrentStatesList(ctrl *controller.Controller) (string, string, ht
 // @Failure	500 {string} string "error message"
 // @Router /historical/devices/{id} [get]
 func GetHistoricalDeviceStates(ctrl *controller.Controller) (string, string, httprouter.Handle) {
-	return http.MethodGet, "/historical/devices/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+	return http.MethodGet, "/historical/devices/:" + pathParamID, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		id := params.ByName(pathParamID)
 		if id == "" {
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "devices", []string{id}, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), model.PermDeviceKind, []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -236,13 +256,13 @@ func GetHistoricalDeviceStates(ctrl *controller.Controller) (string, string, htt
 // @Failure	500 {string} string "error message"
 // @Router /historical/gateways/{id} [get]
 func GetHistoricalGatewayStates(ctrl *controller.Controller) (string, string, httprouter.Handle) {
-	return http.MethodGet, "/historical/gateways/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+	return http.MethodGet, "/historical/gateways/:" + pathParamID, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		id := params.ByName(pathParamID)
 		if id == "" {
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), "hubs", []string{id}, "r")
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), model.PermGatewayKind, []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -289,7 +309,11 @@ func PostQueryHistoricalStatesMap(ctrl *controller.Controller) (string, string, 
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.Kind+"instance", query.IDs)
+		if err = controller.ValidateKind(query.Kind); err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), permKindMap[query.Kind], query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -327,7 +351,11 @@ func PostQueryHistoricalStatesList(ctrl *controller.Controller) (string, string,
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.Kind+"instance", query.IDs)
+		if err = controller.ValidateKind(query.Kind); err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), permKindMap[query.Kind], query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -362,19 +390,19 @@ func GetSwaggerDoc(_ *controller.Controller) (string, string, httprouter.Handle)
 }
 
 func parseHistoricalStatesQuery(query url.Values) (rng time.Duration, since time.Time, until time.Time, err error) {
-	if rngStr := query.Get("range"); rngStr != "" {
+	if rngStr := query.Get(queryParamRange); rngStr != "" {
 		rng, err = time.ParseDuration(rngStr)
 		if err != nil {
 			return 0, time.Time{}, time.Time{}, err
 		}
 	}
-	if sinceStr := query.Get("since"); sinceStr != "" {
+	if sinceStr := query.Get(queryParamSince); sinceStr != "" {
 		since, err = time.Parse(time.RFC3339, sinceStr)
 		if err != nil {
 			return 0, time.Time{}, time.Time{}, err
 		}
 	}
-	if untilStr := query.Get("until"); untilStr != "" {
+	if untilStr := query.Get(queryParamUntil); untilStr != "" {
 		since, err = time.Parse(time.RFC3339, untilStr)
 		if err != nil {
 			return 0, time.Time{}, time.Time{}, err
