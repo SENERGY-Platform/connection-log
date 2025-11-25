@@ -2,15 +2,17 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
+	_ "github.com/SENERGY-Platform/connection-log/docs"
 	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
 	"github.com/SENERGY-Platform/connection-log/pkg/controller"
 	"github.com/SENERGY-Platform/connection-log/pkg/model"
 	"github.com/julienschmidt/httprouter"
-	"io"
-	"net/http"
-	"net/url"
-	"os"
-	"time"
+	"github.com/swaggo/swag"
 )
 
 const (
@@ -30,7 +32,7 @@ var permKindMap = map[string]string{
 // @Description Get the current state of a device.
 // @Tags Current states
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param id path string true "device id"
 // @Success	200 {object} model.ResourceCurrentState "device state"
 // @Failure	400 {string} string "error message"
@@ -71,7 +73,7 @@ func GetCurrentDeviceState(ctrl *controller.Controller) (string, string, httprou
 // @Description Get the current state of a gateway.
 // @Tags Current states
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param id path string true "gateway id"
 // @Success	200 {object} model.ResourceCurrentState "gateway state"
 // @Failure	400 {string} string "error message"
@@ -113,7 +115,7 @@ func GetCurrentGatewayState(ctrl *controller.Controller) (string, string, httpro
 // @Tags Current states
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param query body model.QueryCurrent true "query object"
 // @Success	200 {object} map[string]bool "current states mapped to IDs"
 // @Failure	400 {string} string "error message"
@@ -155,7 +157,7 @@ func PostQueryCurrentStatesMap(ctrl *controller.Controller) (string, string, htt
 // @Tags Current states
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param query body model.QueryCurrent true "query object"
 // @Success	200 {array} model.ResourceCurrentState "current states"
 // @Failure	400 {string} string "error message"
@@ -196,7 +198,7 @@ func PostQueryCurrentStatesList(ctrl *controller.Controller) (string, string, ht
 // @Description Get the historical states of a device.
 // @Tags Historical states
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param id path string true "device id"
 // @Param range query string false "time range e.g. 24h, valid units are 'ns', 'us' (or 'µs'), 'ms', 's', 'm', 'h'"
 // @Param since query string false "timestamp in RFC 3339 format, can be combined with 'range' or 'until'"
@@ -245,7 +247,7 @@ func GetHistoricalDeviceStates(ctrl *controller.Controller) (string, string, htt
 // @Description Get the historical states of a gateway.
 // @Tags Historical states
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param id path string true "gateway id"
 // @Param range query string false "time range e.g. 24h, valid units are 'ns', 'us' (or 'µs'), 'ms', 's', 'm', 'h'"
 // @Param since query string false "timestamp in RFC 3339 format, can be combined with 'range' or 'until'"
@@ -295,7 +297,7 @@ func GetHistoricalGatewayStates(ctrl *controller.Controller) (string, string, ht
 // @Tags Historical states
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param query body model.QueryHistorical true "query object"
 // @Success	200 {object} map[string]model.HistoricalStates "historical states mapped to IDs"
 // @Failure	400 {string} string "error message"
@@ -337,7 +339,7 @@ func PostQueryHistoricalStatesMap(ctrl *controller.Controller) (string, string, 
 // @Tags Historical states
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param query body model.QueryHistorical true "query object"
 // @Success	200 {array} model.ResourceHistoricalStates "historical states"
 // @Failure	400 {string} string "error message"
@@ -373,19 +375,19 @@ func PostQueryHistoricalStatesList(ctrl *controller.Controller) (string, string,
 	}
 }
 
+//go:generate go install github.com/swaggo/swag/cmd/swag@latest
+//go:generate swag init -o ../../docs --parseDependency -d .. -g api/api.go
 func GetSwaggerDoc(_ *controller.Controller) (string, string, httprouter.Handle) {
 	return http.MethodGet, "/doc", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		file, err := os.Open("docs/swagger.json")
-		if err != nil {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer file.Close()
 		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-		if _, err = io.Copy(writer, file); err != nil {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+		doc, err := swag.ReadDoc()
+		if err != nil {
+			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
+		//remove empty host to enable developer-swagger-api service to replace it; can not use cleaner delete on json object, because developer-swagger-api is sensible to formatting; better alternative is refactoring of developer-swagger-api/apis/db/db.py
+		doc = strings.Replace(doc, `"host": "",`, "", 1)
+		_, _ = writer.Write([]byte(doc))
 	}
 }
 

@@ -51,7 +51,11 @@ var routes = []func(ctrl *controller.Controller) (m, p string, h httprouter.Hand
 // @description Provides HTTP-API to request current and historical connection log.
 // @license.name Apache-2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
 // @BasePath /
+// @version {version}
 func StartRest(config configuration.Config, ctrl *controller.Controller) {
 	log.Println("start server on port: ", config.ServerPort)
 	router := httprouter.New()

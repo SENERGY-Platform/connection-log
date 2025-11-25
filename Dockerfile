@@ -1,10 +1,10 @@
-FROM golang:1.23 AS builder
+FROM golang:1.25 AS builder
 
 COPY . /go/src/app
 WORKDIR /go/src/app
 
 ENV GO111MODULE=on
-
+RUN go generate ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -o app
 
 RUN git log -1 --oneline > version.txt
@@ -14,7 +14,6 @@ WORKDIR /root/
 COPY --from=builder /go/src/app/app .
 COPY --from=builder /go/src/app/config.json .
 COPY --from=builder /go/src/app/version.txt .
-COPY --from=builder /go/src/app/docs docs
 
 EXPOSE 8080
 

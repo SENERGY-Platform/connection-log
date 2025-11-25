@@ -5,4 +5,4 @@ The data is written by the connectionlog-worker service.
 
 Generate swagger docs:
 
-    swag init -g api.go -o docs -dir pkg/api --parseDependency --ot json
+    go generate ./...

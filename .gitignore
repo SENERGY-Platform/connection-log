@@ -1,3 +1,5 @@
 .idea
 connectionlog
 connection-log
+__debug*
+.vscode

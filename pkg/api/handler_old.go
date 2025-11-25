@@ -2,12 +2,13 @@ package api
 
 import (
 	"encoding/json"
+	"log"
+	"net/http"
+
 	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
 	"github.com/SENERGY-Platform/connection-log/pkg/controller"
 	_ "github.com/influxdata/influxdb1-client/v2"
 	"github.com/julienschmidt/httprouter"
-	"log"
-	"net/http"
 )
 
 // PostCheckDeviceOnlineStates godoc
@@ -15,7 +16,7 @@ import (
 // @Tags Old api
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param ids body []string true "list of IDs"
 // @Success	200 {object} map[string]bool "states mapped to IDs"
 // @Failure	400 {string} string "error message"
@@ -55,7 +56,7 @@ func PostCheckDeviceOnlineStates(ctrl *controller.Controller) (string, string, h
 // @Tags Old api
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param ids body []string true "list of IDs"
 // @Success	200 {object} map[string]bool "states mapped to IDs"
 // @Failure	400 {string} string "error message"
@@ -94,7 +95,7 @@ func PostInternCheckDeviceOnlineStates(ctrl *controller.Controller) (string, str
 // @Tags Old api
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param ids body []string true "list of IDs"
 // @Success	200 {object} map[string]bool "states mapped to IDs"
 // @Failure	400 {string} string "error message"
@@ -135,7 +136,7 @@ func PostInternCheckGatewayOnlineStates(ctrl *controller.Controller) (string, st
 // @Tags Old api
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param ids body []string true "list of IDs"
 // @Param duration path string true "duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations"
 // @Success	200 {array} client.Result "result"
@@ -178,7 +179,7 @@ func PostInternGetDevicesHistory(ctrl *controller.Controller) (string, string, h
 // @Tags Old api
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param ids body []string true "list of IDs"
 // @Param duration path string true "duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations"
 // @Success	200 {array} client.Result "result"
@@ -221,7 +222,7 @@ func PostInternGetGatewaysHistory(ctrl *controller.Controller) (string, string, 
 // @Tags Old api
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param ids body []string true "list of IDs"
 // @Success	200 {object} map[string]float64 "unix timestamps mapped to IDs"
 // @Failure	400 {string} string "error message"
@@ -262,7 +263,7 @@ func PostInternGetDevicesLogStart(ctrl *controller.Controller) (string, string, 
 // @Tags Old api
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param ids body []string true "list of IDs"
 // @Success	200 {object} map[string]float64 "unix timestamps mapped to IDs"
 // @Failure	400 {string} string "error message"
@@ -303,7 +304,7 @@ func PostInternGetGatewaysLogStart(ctrl *controller.Controller) (string, string,
 // @Tags Old api
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param duration path string true "duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations"
 // @Param ids body []string true "list of IDs"
 // @Success	200 {object} map[string][][]any ""
@@ -346,7 +347,7 @@ func PostInternGetDevicesLogEdge(ctrl *controller.Controller) (string, string, h
 // @Tags Old api
 // @Accept json
 // @Produce	json
-// @Param Authorization header string true "Auth token"
+// @Security Bearer
 // @Param duration path string true "duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations"
 // @Param ids body []string true "list of IDs"
 // @Success	200 {object} map[string][][]any ""

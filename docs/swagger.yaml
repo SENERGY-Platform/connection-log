@@ -1,0 +1,859 @@
+definitions:
+  client.Result:
+    properties:
+      error:
+        type: string
+      messages:
+        items:
+          $ref: '#/definitions/github_com_influxdata_influxdb1-client_v2.Message'
+        type: array
+      series:
+        items:
+          $ref: '#/definitions/models.Row'
+        type: array
+      statement_id:
+        type: integer
+    type: object
+  github_com_influxdata_influxdb1-client_v2.Message:
+    properties:
+      level:
+        type: string
+      text:
+        type: string
+    type: object
+  model.Duration:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    format: int64
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+  model.HistoricalStates:
+    properties:
+      next_state:
+        allOf:
+        - $ref: '#/definitions/model.State'
+        description: First state succeeding the selected time frame.
+      prev_state:
+        allOf:
+        - $ref: '#/definitions/model.State'
+        description: Last state preceding the selected time frame.
+      states:
+        description: All states within the selected time frame.
+        items:
+          $ref: '#/definitions/model.State'
+        type: array
+    type: object
+  model.QueryCurrent:
+    properties:
+      ids:
+        description: IDs for witch states are to be retrieved.
+        items:
+          type: string
+        type: array
+      kind:
+        description: Valid values are "device" and "gateway".
+        type: string
+    type: object
+  model.QueryHistorical:
+    properties:
+      ids:
+        description: IDs for witch states are to be retrieved.
+        items:
+          type: string
+        type: array
+      kind:
+        description: Valid values are "device" and "gateway".
+        type: string
+      range:
+        allOf:
+        - $ref: '#/definitions/model.Duration'
+        description: Time range e.g. 24h, valid units are "ns", "us" (or "µs"), "ms",
+          "s", "m", "h".
+      since:
+        description: Timestamp in RFC 3339 format, can be combined with 'range' or
+          'until'.
+        type: string
+      until:
+        description: Timestamp in RFC 3339 format, can be combined with 'range' or
+          'since'.
+        type: string
+    type: object
+  model.ResourceCurrentState:
+    properties:
+      connected:
+        type: boolean
+      id:
+        type: string
+    type: object
+  model.ResourceHistoricalStates:
+    properties:
+      id:
+        type: string
+      next_state:
+        allOf:
+        - $ref: '#/definitions/model.State'
+        description: First state succeeding the selected time frame.
+      prev_state:
+        allOf:
+        - $ref: '#/definitions/model.State'
+        description: Last state preceding the selected time frame.
+      states:
+        description: All states within the selected time frame.
+        items:
+          $ref: '#/definitions/model.State'
+        type: array
+    type: object
+  model.State:
+    properties:
+      connected:
+        type: boolean
+      time:
+        description: Timestamp in RFC 3339 format.
+        type: string
+    type: object
+  models.Row:
+    properties:
+      columns:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      partial:
+        type: boolean
+      tags:
+        additionalProperties:
+          type: string
+        type: object
+      values:
+        items:
+          items: {}
+          type: array
+        type: array
+    type: object
+info:
+  contact: {}
+  description: Provides HTTP-API to request current and historical connection log.
+  license:
+    name: Apache-2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Connection Log API
+paths:
+  /current/devices/{id}:
+    get:
+      description: Get the current state of a device.
+      parameters:
+      - description: device id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: device state
+          schema:
+            $ref: '#/definitions/model.ResourceCurrentState'
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Get current device state
+      tags:
+      - Current states
+  /current/gateways/{id}:
+    get:
+      description: Get the current state of a gateway.
+      parameters:
+      - description: gateway id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: gateway state
+          schema:
+            $ref: '#/definitions/model.ResourceCurrentState'
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Get current gateway state
+      tags:
+      - Current states
+  /current/query/list:
+    post:
+      consumes:
+      - application/json
+      description: Query current states for multiple IDs by resource kind (device,
+        gateway).
+      parameters:
+      - description: query object
+        in: body
+        name: query
+        required: true
+        schema:
+          $ref: '#/definitions/model.QueryCurrent'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: current states
+          schema:
+            items:
+              $ref: '#/definitions/model.ResourceCurrentState'
+            type: array
+        "400":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Query current states
+      tags:
+      - Current states
+  /current/query/map:
+    post:
+      consumes:
+      - application/json
+      description: Query current states for multiple IDs by resource kind (device,
+        gateway).
+      parameters:
+      - description: query object
+        in: body
+        name: query
+        required: true
+        schema:
+          $ref: '#/definitions/model.QueryCurrent'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: current states mapped to IDs
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "400":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Query current states
+      tags:
+      - Current states
+  /historical/devices/{id}:
+    get:
+      description: Get the historical states of a device.
+      parameters:
+      - description: device id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: time range e.g. 24h, valid units are 'ns', 'us' (or 'µs'), 'ms',
+          's', 'm', 'h'
+        in: query
+        name: range
+        type: string
+      - description: timestamp in RFC 3339 format, can be combined with 'range' or
+          'until'
+        in: query
+        name: since
+        type: string
+      - description: timestamp in RFC 3339 format, can be combined with 'range' or
+          'since'
+        in: query
+        name: until
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: device state
+          schema:
+            $ref: '#/definitions/model.ResourceHistoricalStates'
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Get historical device states
+      tags:
+      - Historical states
+  /historical/gateways/{id}:
+    get:
+      description: Get the historical states of a gateway.
+      parameters:
+      - description: gateway id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: time range e.g. 24h, valid units are 'ns', 'us' (or 'µs'), 'ms',
+          's', 'm', 'h'
+        in: query
+        name: range
+        type: string
+      - description: timestamp in RFC 3339 format, can be combined with 'range' or
+          'until'
+        in: query
+        name: since
+        type: string
+      - description: timestamp in RFC 3339 format, can be combined with 'range' or
+          'since'
+        in: query
+        name: until
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: gateway states
+          schema:
+            $ref: '#/definitions/model.ResourceHistoricalStates'
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Get historical gateway states
+      tags:
+      - Historical states
+  /historical/query/list:
+    post:
+      consumes:
+      - application/json
+      description: Query current historical states for multiple IDs by resource kind
+        (device, gateway).
+      parameters:
+      - description: query object
+        in: body
+        name: query
+        required: true
+        schema:
+          $ref: '#/definitions/model.QueryHistorical'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: historical states
+          schema:
+            items:
+              $ref: '#/definitions/model.ResourceHistoricalStates'
+            type: array
+        "400":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Query historical states
+      tags:
+      - Historical states
+  /historical/query/map:
+    post:
+      consumes:
+      - application/json
+      description: Query current historical states for multiple IDs by resource kind
+        (device, gateway).
+      parameters:
+      - description: query object
+        in: body
+        name: query
+        required: true
+        schema:
+          $ref: '#/definitions/model.QueryHistorical'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: historical states mapped to IDs
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/model.HistoricalStates'
+            type: object
+        "400":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Query historical states
+      tags:
+      - Historical states
+  /intern/history/device/{duration}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: list of IDs
+        in: body
+        name: ids
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      - description: duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations
+        in: path
+        name: duration
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: result
+          schema:
+            items:
+              $ref: '#/definitions/client.Result'
+            type: array
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Intern get devices history
+      tags:
+      - Old api
+  /intern/history/gateway/{duration}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: list of IDs
+        in: body
+        name: ids
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      - description: duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations
+        in: path
+        name: duration
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: result
+          schema:
+            items:
+              $ref: '#/definitions/client.Result'
+            type: array
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Intern get gateways history
+      tags:
+      - Old api
+  /intern/logedge/device/{duration}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations
+        in: path
+        name: duration
+        required: true
+        type: string
+      - description: list of IDs
+        in: body
+        name: ids
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                items: {}
+                type: array
+              type: array
+            type: object
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Intern get devices log edge
+      tags:
+      - Old api
+  /intern/logedge/gateway/{duration}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: duration in influxdb format https://docs.influxdata.com/influxdb/v1.5/query_language/spec/#durations
+        in: path
+        name: duration
+        required: true
+        type: string
+      - description: list of IDs
+        in: body
+        name: ids
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                items: {}
+                type: array
+              type: array
+            type: object
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Intern get gateways log edge
+      tags:
+      - Old api
+  /intern/logstarts/device:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: list of IDs
+        in: body
+        name: ids
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: unix timestamps mapped to IDs
+          schema:
+            additionalProperties:
+              format: float64
+              type: number
+            type: object
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Intern get devices log start
+      tags:
+      - Old api
+  /intern/logstarts/gateway:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: list of IDs
+        in: body
+        name: ids
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: unix timestamps mapped to IDs
+          schema:
+            additionalProperties:
+              format: float64
+              type: number
+            type: object
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Intern get gateways log start
+      tags:
+      - Old api
+  /intern/state/device/check:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: list of IDs
+        in: body
+        name: ids
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: states mapped to IDs
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Intern check device online states
+      tags:
+      - Old api
+  /intern/state/gateway/check:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: list of IDs
+        in: body
+        name: ids
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: states mapped to IDs
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Intern check gateway online states
+      tags:
+      - Old api
+  /state/device/check:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: list of IDs
+        in: body
+        name: ids
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: states mapped to IDs
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "400":
+          description: error message
+          schema:
+            type: string
+        "401":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Check device online states
+      tags:
+      - Old api
+securityDefinitions:
+  Bearer:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
