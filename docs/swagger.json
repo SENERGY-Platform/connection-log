@@ -122,7 +122,7 @@
                         "Bearer": []
                     }
                 ],
-                "description": "Query current states for multiple IDs by resource kind (device, gateway).",
+                "description": "Query current states for multiple IDs (supported: devices, gateways/hubs).",
                 "consumes": [
                     "application/json"
                 ],
@@ -140,7 +140,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.QueryCurrent"
+                            "$ref": "#/definitions/model.QueryBase"
                         }
                     }
                 ],
@@ -176,7 +176,7 @@
                         "Bearer": []
                     }
                 ],
-                "description": "Query current states for multiple IDs by resource kind (device, gateway).",
+                "description": "Query current states for multiple IDs (supported: devices, gateways/hubs).",
                 "consumes": [
                     "application/json"
                 ],
@@ -194,7 +194,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.QueryCurrent"
+                            "$ref": "#/definitions/model.QueryBase"
                         }
                     }
                 ],
@@ -370,7 +370,7 @@
                         "Bearer": []
                     }
                 ],
-                "description": "Query current historical states for multiple IDs by resource kind (device, gateway).",
+                "description": "Query current historical states for multiple IDs (supported: devices, gateways/hubs).",
                 "consumes": [
                     "application/json"
                 ],
@@ -424,7 +424,7 @@
                         "Bearer": []
                     }
                 ],
-                "description": "Query current historical states for multiple IDs by resource kind (device, gateway).",
+                "description": "Query current historical states for multiple IDs (supported: devices, gateways/hubs).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1114,9 +1114,25 @@
                 1000000,
                 1000000000,
                 60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
                 3600000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
                 "minDuration",
                 "maxDuration",
                 "Nanosecond",
@@ -1155,7 +1171,7 @@
                 }
             }
         },
-        "model.QueryCurrent": {
+        "model.QueryBase": {
             "type": "object",
             "properties": {
                 "ids": {
@@ -1164,10 +1180,6 @@
                     "items": {
                         "type": "string"
                     }
-                },
-                "kind": {
-                    "description": "Valid values are \"device\" and \"gateway\".",
-                    "type": "string"
                 }
             }
         },
@@ -1180,10 +1192,6 @@
                     "items": {
                         "type": "string"
                     }
-                },
-                "kind": {
-                    "description": "Valid values are \"device\" and \"gateway\".",
-                    "type": "string"
                 },
                 "range": {
                     "description": "Time range e.g. 24h, valid units are \"ns\", \"us\" (or \"µs\"), \"ms\", \"s\", \"m\", \"h\".",

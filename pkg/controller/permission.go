@@ -21,35 +21,48 @@ import (
 	"log"
 )
 
-func (this *Controller) CheckRightList(token string, kind string, ids []string, right string) (ok bool, err error) {
-	oks, err := CheckAccess(this.config.PermissionsV2Url, token, kind, ids)
+func (this *Controller) CheckRightList(token string, IDs []string, right string) (ok bool, err error) {
+	idsByKind, err := GetIdsByKind(IDs, true)
 	if err != nil {
 		return false, err
 	}
-	for _, element := range oks {
-		if !element {
+	for kind, ids := range idsByKind {
+		oks, err := CheckAccess(this.config.PermissionsV2Url, token, kind, ids)
+		if err != nil {
 			return false, err
+		}
+		for _, element := range oks {
+			if !element {
+				return false, err
+			}
 		}
 	}
 	return true, err
 }
 
-func (this *Controller) PermissionsFilterIDs(token string, kind string, IDs []string) ([]string, error) {
-	result, err := CheckAccess(this.config.PermissionsV2Url, token, kind, IDs)
+func (this *Controller) PermissionsFilterIDs(token string, IDs []string) ([]string, error) {
+	idsByKind, err := GetIdsByKind(IDs, true)
 	if err != nil {
 		return nil, err
 	}
 	var okIDs []string
 	var nOkIDs []string
-	for id, ok := range result {
-		if ok {
-			okIDs = append(okIDs, id)
-		} else {
-			nOkIDs = append(nOkIDs, id)
+	for kind, ids := range idsByKind {
+		result, err := CheckAccess(this.config.PermissionsV2Url, token, kind, ids)
+		if err != nil {
+			return nil, err
 		}
-	}
-	if len(nOkIDs) > 0 {
-		log.Printf("access denied for IDs: %v", nOkIDs)
+
+		for id, ok := range result {
+			if ok {
+				okIDs = append(okIDs, id)
+			} else {
+				nOkIDs = append(nOkIDs, id)
+			}
+		}
+		if len(nOkIDs) > 0 {
+			log.Printf("access denied for IDs: %v", nOkIDs)
+		}
 	}
 	return okIDs, nil
 }

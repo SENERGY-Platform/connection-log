@@ -5,18 +5,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"maps"
+	"time"
+
 	"github.com/SENERGY-Platform/connection-log/pkg/model"
 	"github.com/influxdata/influxdb1-client/models"
 	influx "github.com/influxdata/influxdb1-client/v2"
-	"log"
-	"time"
 )
 
 func (this *Controller) GetHistoricalStates(ctx context.Context, id, kind string, rng time.Duration, since, until time.Time) (model.ResourceHistoricalStates, error) {
 	resMap, err := this.QueryHistoricalStatesMap(ctx, model.QueryHistorical{
 		QueryBase: model.QueryBase{
-			Kind: kind,
-			IDs:  []string{id},
+			IDs: []string{id},
 		},
 		Range: model.Duration(rng),
 		Since: since,
@@ -51,26 +52,35 @@ func (this *Controller) QueryHistoricalStatesSlice(ctx context.Context, query mo
 }
 
 func (this *Controller) QueryHistoricalStatesMap(_ context.Context, query model.QueryHistorical) (map[string]model.HistoricalStates, error) {
-	if err := ValidateKind(query.Kind); err != nil {
-		return nil, err
-	}
-	if len(query.IDs) == 0 {
-		return nil, nil
-	}
-	statement, prevID, seriesID, nextID, err := this.buildStatement(query)
+	idsBykind, err := GetIdsByKind(query.IDs, false)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := this.influx.Query(influx.NewQuery(statement, this.config.InfluxdbDb, "s"))
-	if err != nil {
-		return nil, err
-	}
-	if err = resp.Error(); err != nil {
-		return nil, err
-	}
-	resMap, err := handleResults(resp.Results, query.Kind, prevID, seriesID, nextID)
-	if err != nil {
-		return nil, err
+	resMap := map[string]model.HistoricalStates{}
+	for kind, ids := range idsBykind {
+		query.IDs = ids
+		if err := validateKind(kind); err != nil {
+			return nil, err
+		}
+		if len(query.IDs) == 0 {
+			return nil, nil
+		}
+		statement, prevID, seriesID, nextID, err := this.buildStatement(query, kind)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := this.influx.Query(influx.NewQuery(statement, this.config.InfluxdbDb, "s"))
+		if err != nil {
+			return nil, err
+		}
+		if err = resp.Error(); err != nil {
+			return nil, err
+		}
+		subResMap, err := handleResults(resp.Results, kind, prevID, seriesID, nextID)
+		if err != nil {
+			return nil, err
+		}
+		maps.Copy(resMap, subResMap)
 	}
 	return resMap, nil
 }
@@ -164,7 +174,7 @@ func rowItemToState(item []any) (model.State, error) {
 	}, nil
 }
 
-func (this *Controller) buildStatement(query model.QueryHistorical) (string, int, int, int, error) {
+func (this *Controller) buildStatement(query model.QueryHistorical, kind string) (string, int, int, int, error) {
 	hasRange := query.Range > 0
 	hasSince := !query.Since.IsZero()
 	hasUntil := !query.Until.IsZero()
@@ -172,15 +182,15 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 	case hasSince && hasUntil:
 		// Since && Until: time >= timestamp AND time <= timestamp
 		// include prev and next
-		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, query.Since)
+		prevQ, err := this.queries.StatePrevQuery(query.IDs, kind, query.Since)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
-		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, query.Kind, query.Since, query.Until)
+		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, kind, query.Since, query.Until)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
-		nextQ, err := this.queries.StateNextQuery(query.IDs, query.Kind, query.Until)
+		nextQ, err := this.queries.StateNextQuery(query.IDs, kind, query.Until)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
@@ -189,15 +199,15 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 		// Range && Until: time >= (timestamp - duration) AND time <= timestamp
 		// include prev and next
 		since := query.Until.Add(time.Duration(query.Range) * -1)
-		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, since)
+		prevQ, err := this.queries.StatePrevQuery(query.IDs, kind, since)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
-		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, query.Kind, since, query.Until)
+		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, kind, since, query.Until)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
-		nextQ, err := this.queries.StateNextQuery(query.IDs, query.Kind, query.Until)
+		nextQ, err := this.queries.StateNextQuery(query.IDs, kind, query.Until)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
@@ -206,15 +216,15 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 		// Range && Since: time >= timestamp AND time <= (timestamp + duration)
 		// include prev and next
 		until := query.Since.Add(time.Duration(query.Range))
-		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, query.Since)
+		prevQ, err := this.queries.StatePrevQuery(query.IDs, kind, query.Since)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
-		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, query.Kind, query.Since, until)
+		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, kind, query.Since, until)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
-		nextQ, err := this.queries.StateNextQuery(query.IDs, query.Kind, until)
+		nextQ, err := this.queries.StateNextQuery(query.IDs, kind, until)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
@@ -223,11 +233,11 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 		// Range: time >= (now - duration)
 		// include prev
 		timestamp := getCurrentTime(this.config.InfluxdbUseUTC).Add(time.Duration(query.Range) * -1)
-		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, timestamp)
+		prevQ, err := this.queries.StatePrevQuery(query.IDs, kind, timestamp)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
-		seriesQ, err := this.queries.StatesTimeGrtEqQuery(query.IDs, query.Kind, timestamp)
+		seriesQ, err := this.queries.StatesTimeGrtEqQuery(query.IDs, kind, timestamp)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
@@ -235,11 +245,11 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 	case hasUntil:
 		// Until: time <= timestamp
 		// include next
-		seriesQ, err := this.queries.StatesTimeLesEqQuery(query.IDs, query.Kind, query.Until)
+		seriesQ, err := this.queries.StatesTimeLesEqQuery(query.IDs, kind, query.Until)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
-		nextQ, err := this.queries.StateNextQuery(query.IDs, query.Kind, query.Until)
+		nextQ, err := this.queries.StateNextQuery(query.IDs, kind, query.Until)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
@@ -247,17 +257,17 @@ func (this *Controller) buildStatement(query model.QueryHistorical) (string, int
 	case hasSince:
 		// Since: time >= timestamp
 		// include prev
-		prevQ, err := this.queries.StatePrevQuery(query.IDs, query.Kind, query.Since)
+		prevQ, err := this.queries.StatePrevQuery(query.IDs, kind, query.Since)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
-		seriesQ, err := this.queries.StatesTimeGrtEqQuery(query.IDs, query.Kind, query.Since)
+		seriesQ, err := this.queries.StatesTimeGrtEqQuery(query.IDs, kind, query.Since)
 		if err != nil {
 			return "", 0, 0, 0, err
 		}
 		return prevQ + seriesQ, 0, 1, -1, nil
 	default:
-		seriesQ, err := this.queries.StatesTimeLesEqQuery(query.IDs, query.Kind, getCurrentTime(this.config.InfluxdbUseUTC))
+		seriesQ, err := this.queries.StatesTimeLesEqQuery(query.IDs, kind, getCurrentTime(this.config.InfluxdbUseUTC))
 		if err != nil {
 			return "", 0, 0, 0, err
 		}

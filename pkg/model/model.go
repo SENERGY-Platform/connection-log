@@ -35,11 +35,8 @@ type State struct {
 }
 
 type QueryBase struct {
-	Kind string   `json:"kind"` // Valid values are "device" and "gateway".
-	IDs  []string `json:"ids"`  // IDs for witch states are to be retrieved.
+	IDs []string `json:"ids"` // IDs for witch states are to be retrieved.
 }
-
-type QueryCurrent = QueryBase
 
 type QueryHistorical struct {
 	QueryBase

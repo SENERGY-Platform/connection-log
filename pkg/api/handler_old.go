@@ -7,6 +7,7 @@ import (
 
 	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
 	"github.com/SENERGY-Platform/connection-log/pkg/controller"
+	"github.com/SENERGY-Platform/connection-log/pkg/model"
 	_ "github.com/influxdata/influxdb1-client/v2"
 	"github.com/julienschmidt/httprouter"
 )
@@ -31,7 +32,18 @@ func PostCheckDeviceOnlineStates(ctrl *controller.Controller) (string, string, h
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "devices", ids, "r")
+		for _, id := range ids {
+			kind, err := controller.GetKindFromId(id, false)
+			if err != nil {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if kind != model.DeviceKind {
+				http.Error(res, "devices endpoint only handles devices", http.StatusBadRequest)
+				return
+			}
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -71,7 +83,18 @@ func PostInternCheckDeviceOnlineStates(ctrl *controller.Controller) (string, str
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "devices", ids, "r")
+		for _, id := range ids {
+			kind, err := controller.GetKindFromId(id, false)
+			if err != nil {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if kind != model.DeviceKind {
+				http.Error(res, "devices endpoint only handles devices", http.StatusBadRequest)
+				return
+			}
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -111,7 +134,18 @@ func PostInternCheckGatewayOnlineStates(ctrl *controller.Controller) (string, st
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "hubs", ids, "r")
+		for _, id := range ids {
+			kind, err := controller.GetKindFromId(id, false)
+			if err != nil {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if kind != model.GatewayKind {
+				http.Error(res, "gateways endpoint only handles gateways", http.StatusBadRequest)
+				return
+			}
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -154,7 +188,18 @@ func PostInternGetDevicesHistory(ctrl *controller.Controller) (string, string, h
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "devices", ids, "r")
+		for _, id := range ids {
+			kind, err := controller.GetKindFromId(id, false)
+			if err != nil {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if kind != model.DeviceKind {
+				http.Error(res, "devices endpoint only handles devices", http.StatusBadRequest)
+				return
+			}
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -197,7 +242,18 @@ func PostInternGetGatewaysHistory(ctrl *controller.Controller) (string, string, 
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "hubs", ids, "r")
+		for _, id := range ids {
+			kind, err := controller.GetKindFromId(id, false)
+			if err != nil {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if kind != model.GatewayKind {
+				http.Error(res, "gateways endpoint only handles gateways", http.StatusBadRequest)
+				return
+			}
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -238,7 +294,18 @@ func PostInternGetDevicesLogStart(ctrl *controller.Controller) (string, string, 
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "devices", ids, "r")
+		for _, id := range ids {
+			kind, err := controller.GetKindFromId(id, false)
+			if err != nil {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if kind != model.DeviceKind {
+				http.Error(res, "devices endpoint only handles devices", http.StatusBadRequest)
+				return
+			}
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -279,7 +346,18 @@ func PostInternGetGatewaysLogStart(ctrl *controller.Controller) (string, string,
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "hubs", ids, "r")
+		for _, id := range ids {
+			kind, err := controller.GetKindFromId(id, false)
+			if err != nil {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if kind != model.GatewayKind {
+				http.Error(res, "gateways endpoint only handles gateways", http.StatusBadRequest)
+				return
+			}
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -322,7 +400,18 @@ func PostInternGetDevicesLogEdge(ctrl *controller.Controller) (string, string, h
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "devices", ids, "r")
+		for _, id := range ids {
+			kind, err := controller.GetKindFromId(id, false)
+			if err != nil {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if kind != model.DeviceKind {
+				http.Error(res, "devices endpoint only handles devices", http.StatusBadRequest)
+				return
+			}
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -365,7 +454,18 @@ func PostInternGetGatewaysLogEdge(ctrl *controller.Controller) (string, string, 
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), "hubs", ids, "r")
+		for _, id := range ids {
+			kind, err := controller.GetKindFromId(id, false)
+			if err != nil {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if kind != model.GatewayKind {
+				http.Error(res, "gateways endpoint only handles gateways", http.StatusBadRequest)
+				return
+			}
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
 			log.Println("ERROR: while checking rights", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)

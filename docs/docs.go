@@ -130,7 +130,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "Query current states for multiple IDs by resource kind (device, gateway).",
+                "description": "Query current states for multiple IDs (supported: devices, gateways/hubs).",
                 "consumes": [
                     "application/json"
                 ],
@@ -148,7 +148,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.QueryCurrent"
+                            "$ref": "#/definitions/model.QueryBase"
                         }
                     }
                 ],
@@ -184,7 +184,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "Query current states for multiple IDs by resource kind (device, gateway).",
+                "description": "Query current states for multiple IDs (supported: devices, gateways/hubs).",
                 "consumes": [
                     "application/json"
                 ],
@@ -202,7 +202,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.QueryCurrent"
+                            "$ref": "#/definitions/model.QueryBase"
                         }
                     }
                 ],
@@ -378,7 +378,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "Query current historical states for multiple IDs by resource kind (device, gateway).",
+                "description": "Query current historical states for multiple IDs (supported: devices, gateways/hubs).",
                 "consumes": [
                     "application/json"
                 ],
@@ -432,7 +432,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "Query current historical states for multiple IDs by resource kind (device, gateway).",
+                "description": "Query current historical states for multiple IDs (supported: devices, gateways/hubs).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1122,9 +1122,25 @@ const docTemplate = `{
                 1000000,
                 1000000000,
                 60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
                 3600000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
                 "minDuration",
                 "maxDuration",
                 "Nanosecond",
@@ -1163,7 +1179,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.QueryCurrent": {
+        "model.QueryBase": {
             "type": "object",
             "properties": {
                 "ids": {
@@ -1172,10 +1188,6 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
-                },
-                "kind": {
-                    "description": "Valid values are \"device\" and \"gateway\".",
-                    "type": "string"
                 }
             }
         },
@@ -1188,10 +1200,6 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
-                },
-                "kind": {
-                    "description": "Valid values are \"device\" and \"gateway\".",
-                    "type": "string"
                 },
                 "range": {
                     "description": "Time range e.g. 24h, valid units are \"ns\", \"us\" (or \"µs\"), \"ms\", \"s\", \"m\", \"h\".",

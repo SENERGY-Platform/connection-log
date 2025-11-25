@@ -17,12 +17,13 @@
 package api
 
 import (
+	"log"
+	"net/http"
+
 	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
 	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
 	"github.com/SENERGY-Platform/connection-log/pkg/controller"
 	"github.com/julienschmidt/httprouter"
-	"log"
-	"net/http"
 )
 
 var routes = []func(ctrl *controller.Controller) (m, p string, h httprouter.Handle){
@@ -37,8 +38,8 @@ var routes = []func(ctrl *controller.Controller) (m, p string, h httprouter.Hand
 	PostInternGetGatewaysLogEdge,
 	GetCurrentDeviceState,
 	GetCurrentGatewayState,
-	PostQueryCurrentStatesMap,
-	PostQueryCurrentStatesList,
+	PostQueryBaseStatesMap,
+	PostQueryBaseStatesList,
 	GetHistoricalDeviceStates,
 	GetHistoricalGatewayStates,
 	PostQueryHistoricalStatesMap,

@@ -22,11 +22,6 @@ const (
 	queryParamUntil = "until"
 )
 
-var permKindMap = map[string]string{
-	model.DeviceKind:  model.PermDeviceKind,
-	model.GatewayKind: model.PermGatewayKind,
-}
-
 // GetCurrentDeviceState godoc
 // @Summary Get current device state
 // @Description Get the current state of a device.
@@ -46,7 +41,16 @@ func GetCurrentDeviceState(ctrl *controller.Controller) (string, string, httprou
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), model.PermDeviceKind, []string{id}, "r")
+		kind, err := controller.GetKindFromId(id, false)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if kind != model.DeviceKind {
+			http.Error(writer, "devices endpoint only handles devices", http.StatusBadRequest)
+			return
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -87,7 +91,16 @@ func GetCurrentGatewayState(ctrl *controller.Controller) (string, string, httpro
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), model.PermGatewayKind, []string{id}, "r")
+		kind, err := controller.GetKindFromId(id, false)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if kind != model.GatewayKind {
+			http.Error(writer, "gateways endpoint only handles gateways", http.StatusBadRequest)
+			return
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -109,36 +122,32 @@ func GetCurrentGatewayState(ctrl *controller.Controller) (string, string, httpro
 	}
 }
 
-// PostQueryCurrentStatesMap godoc
+// PostQueryBaseStatesMap godoc
 // @Summary Query current states
-// @Description Query current states for multiple IDs by resource kind (device, gateway).
+// @Description Query current states for multiple IDs (supported: devices, gateways/hubs).
 // @Tags Current states
 // @Accept json
 // @Produce	json
 // @Security Bearer
-// @Param query body model.QueryCurrent true "query object"
+// @Param query body model.QueryBase true "query object"
 // @Success	200 {object} map[string]bool "current states mapped to IDs"
 // @Failure	400 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /current/query/map [post]
-func PostQueryCurrentStatesMap(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostQueryBaseStatesMap(ctrl *controller.Controller) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/current/query/map", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		var query model.QueryCurrent
+		var query model.QueryBase
 		err := json.NewDecoder(request.Body).Decode(&query)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err = controller.ValidateKind(query.Kind); err != nil {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
-		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), permKindMap[query.Kind], query.IDs)
+		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		res, err := ctrl.QueryCurrentStatesMap(request.Context(), query)
+		res, err := ctrl.QueryBaseStatesMap(request.Context(), query)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -151,36 +160,32 @@ func PostQueryCurrentStatesMap(ctrl *controller.Controller) (string, string, htt
 	}
 }
 
-// PostQueryCurrentStatesList godoc
+// PostQueryBaseStatesList godoc
 // @Summary Query current states
-// @Description Query current states for multiple IDs by resource kind (device, gateway).
+// @Description Query current states for multiple IDs (supported: devices, gateways/hubs).
 // @Tags Current states
 // @Accept json
 // @Produce	json
 // @Security Bearer
-// @Param query body model.QueryCurrent true "query object"
+// @Param query body model.QueryBase true "query object"
 // @Success	200 {array} model.ResourceCurrentState "current states"
 // @Failure	400 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /current/query/list [post]
-func PostQueryCurrentStatesList(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostQueryBaseStatesList(ctrl *controller.Controller) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/current/query/list", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		var query model.QueryCurrent
+		var query model.QueryBase
 		err := json.NewDecoder(request.Body).Decode(&query)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err = controller.ValidateKind(query.Kind); err != nil {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
-		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), permKindMap[query.Kind], query.IDs)
+		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		res, err := ctrl.QueryCurrentStatesSlice(request.Context(), query)
+		res, err := ctrl.QueryBaseStatesSlice(request.Context(), query)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -215,7 +220,16 @@ func GetHistoricalDeviceStates(ctrl *controller.Controller) (string, string, htt
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), model.PermDeviceKind, []string{id}, "r")
+		kind, err := controller.GetKindFromId(id, false)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if kind != model.DeviceKind {
+			http.Error(writer, "devices endpoint only handles devices", http.StatusBadRequest)
+			return
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -264,7 +278,16 @@ func GetHistoricalGatewayStates(ctrl *controller.Controller) (string, string, ht
 			http.Error(writer, "missing id parameter", http.StatusBadRequest)
 			return
 		}
-		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), model.PermGatewayKind, []string{id}, "r")
+		kind, err := controller.GetKindFromId(id, false)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if kind != model.GatewayKind {
+			http.Error(writer, "gateways endpoint only handles gateways", http.StatusBadRequest)
+			return
+		}
+		ok, err := ctrl.CheckRightList(util.GetAuthToken(request), []string{id}, "r")
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -293,7 +316,7 @@ func GetHistoricalGatewayStates(ctrl *controller.Controller) (string, string, ht
 
 // PostQueryHistoricalStatesMap godoc
 // @Summary Query historical states
-// @Description Query current historical states for multiple IDs by resource kind (device, gateway).
+// @Description Query current historical states for multiple IDs (supported: devices, gateways/hubs).
 // @Tags Historical states
 // @Accept json
 // @Produce	json
@@ -311,11 +334,7 @@ func PostQueryHistoricalStatesMap(ctrl *controller.Controller) (string, string, 
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err = controller.ValidateKind(query.Kind); err != nil {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
-		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), permKindMap[query.Kind], query.IDs)
+		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -335,7 +354,7 @@ func PostQueryHistoricalStatesMap(ctrl *controller.Controller) (string, string, 
 
 // PostQueryHistoricalStatesList godoc
 // @Summary Query historical states
-// @Description Query current historical states for multiple IDs by resource kind (device, gateway).
+// @Description Query current historical states for multiple IDs (supported: devices, gateways/hubs).
 // @Tags Historical states
 // @Accept json
 // @Produce	json
@@ -353,11 +372,7 @@ func PostQueryHistoricalStatesList(ctrl *controller.Controller) (string, string,
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err = controller.ValidateKind(query.Kind); err != nil {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
-		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), permKindMap[query.Kind], query.IDs)
+		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
