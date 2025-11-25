@@ -23,10 +23,11 @@ import (
 	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
 	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
 	"github.com/SENERGY-Platform/connection-log/pkg/controller"
+	deviceRepo "github.com/SENERGY-Platform/device-repository/lib/client"
 	"github.com/julienschmidt/httprouter"
 )
 
-var routes = []func(ctrl *controller.Controller) (m, p string, h httprouter.Handle){
+var routes = []func(ctrl *controller.Controller, dr deviceRepo.Interface) (m, p string, h httprouter.Handle){
 	PostCheckDeviceOnlineStates,
 	PostInternCheckDeviceOnlineStates,
 	PostInternCheckGatewayOnlineStates,
@@ -60,8 +61,9 @@ var routes = []func(ctrl *controller.Controller) (m, p string, h httprouter.Hand
 func StartRest(config configuration.Config, ctrl *controller.Controller) {
 	log.Println("start server on port: ", config.ServerPort)
 	router := httprouter.New()
+	dr := deviceRepo.NewClient(config.DeviceRepoUrl, nil)
 	for _, rf := range routes {
-		m, p, hf := rf(ctrl)
+		m, p, hf := rf(ctrl, dr)
 		router.Handle(m, p, hf)
 		log.Println("added route:", m, p)
 	}

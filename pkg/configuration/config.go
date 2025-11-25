@@ -46,6 +46,8 @@ type Config struct {
 	InfluxdbTimeout int64
 	InfluxdbUseUTC  bool
 
+	DeviceRepoUrl string
+
 	HttpClientTimeout string
 }
 

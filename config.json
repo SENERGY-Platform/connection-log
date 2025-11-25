@@ -21,5 +21,7 @@
   "InfluxdbTimeout": 5,
   "InfluxdbUseUTC": true,
 
+  "DeviceRepoUrl": "http://api.device-repository:8080",
+
   "HttpClientTimeout": "30s"
 }

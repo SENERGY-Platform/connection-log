@@ -7,10 +7,12 @@ import (
 )
 
 const (
-	DeviceKind      = "device"
-	GatewayKind     = "gateway"
-	PermDeviceKind  = "devices"
-	PermGatewayKind = "hubs"
+	DeviceKind          = "device"
+	GatewayKind         = "gateway"
+	PermDeviceKind      = "devices"
+	PermGatewayKind     = "hubs"
+	PermDeviceGroupKind = "device-groups"
+	PermLocationsKind   = "locations"
 )
 
 type ResourceCurrentState struct {

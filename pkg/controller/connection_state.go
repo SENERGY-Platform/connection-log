@@ -107,6 +107,14 @@ func GetKindFromId(id string, perm bool) (kind string, err error) {
 		}
 		return model.GatewayKind, nil
 	}
+	if perm {
+		if strings.HasPrefix(id, models.DEVICE_GROUP_PREFIX) {
+			return model.PermDeviceGroupKind, nil
+		}
+		if strings.HasPrefix(id, models.LOCATION_PREFIX) {
+			return model.PermLocationsKind, nil
+		}
+	}
 
 	return "", fmt.Errorf("unsupported kind")
 }
@@ -123,7 +131,7 @@ func GetIdsByKind(ids []string, perm bool) (idsByKind map[string][]string, err e
 			arr = []string{}
 		}
 		arr = append(arr, id)
-		idsByKind[id] = arr
+		idsByKind[kind] = arr
 	}
 	return idsByKind, nil
 }

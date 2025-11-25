@@ -8,6 +8,7 @@ import (
 	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
 	"github.com/SENERGY-Platform/connection-log/pkg/controller"
 	"github.com/SENERGY-Platform/connection-log/pkg/model"
+	deviceRepo "github.com/SENERGY-Platform/device-repository/lib/client"
 	_ "github.com/influxdata/influxdb1-client/v2"
 	"github.com/julienschmidt/httprouter"
 )
@@ -24,7 +25,7 @@ import (
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /state/device/check [post]
-func PostCheckDeviceOnlineStates(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostCheckDeviceOnlineStates(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/state/device/check", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
@@ -75,7 +76,7 @@ func PostCheckDeviceOnlineStates(ctrl *controller.Controller) (string, string, h
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /intern/state/device/check [post]
-func PostInternCheckDeviceOnlineStates(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostInternCheckDeviceOnlineStates(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/intern/state/device/check", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
@@ -125,7 +126,7 @@ func PostInternCheckDeviceOnlineStates(ctrl *controller.Controller) (string, str
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /intern/state/gateway/check [post]
-func PostInternCheckGatewayOnlineStates(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostInternCheckGatewayOnlineStates(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/intern/state/gateway/check", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
@@ -178,7 +179,7 @@ func PostInternCheckGatewayOnlineStates(ctrl *controller.Controller) (string, st
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /intern/history/device/{duration} [post]
-func PostInternGetDevicesHistory(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostInternGetDevicesHistory(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/intern/history/device/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		duration := ps.ByName("duration")
@@ -232,7 +233,7 @@ func PostInternGetDevicesHistory(ctrl *controller.Controller) (string, string, h
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /intern/history/gateway/{duration} [post]
-func PostInternGetGatewaysHistory(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostInternGetGatewaysHistory(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/intern/history/gateway/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		duration := ps.ByName("duration")
@@ -285,7 +286,7 @@ func PostInternGetGatewaysHistory(ctrl *controller.Controller) (string, string, 
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /intern/logstarts/device [post]
-func PostInternGetDevicesLogStart(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostInternGetDevicesLogStart(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/intern/logstarts/device", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
@@ -337,7 +338,7 @@ func PostInternGetDevicesLogStart(ctrl *controller.Controller) (string, string, 
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /intern/logstarts/gateway [post]
-func PostInternGetGatewaysLogStart(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostInternGetGatewaysLogStart(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/intern/logstarts/gateway", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
@@ -390,7 +391,7 @@ func PostInternGetGatewaysLogStart(ctrl *controller.Controller) (string, string,
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /intern/logedge/device/{duration} [post]
-func PostInternGetDevicesLogEdge(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostInternGetDevicesLogEdge(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/intern/logedge/device/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		duration := ps.ByName("duration")
 		ids := []string{}
@@ -444,7 +445,7 @@ func PostInternGetDevicesLogEdge(ctrl *controller.Controller) (string, string, h
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /intern/logedge/gateway/{duration} [post]
-func PostInternGetGatewaysLogEdge(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostInternGetGatewaysLogEdge(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/intern/logedge/gateway/:duration", func(res http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		duration := ps.ByName("duration")
 		ids := []string{}

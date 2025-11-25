@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
 	"github.com/SENERGY-Platform/connection-log/pkg/controller"
 	"github.com/SENERGY-Platform/connection-log/pkg/model"
+	deviceRepo "github.com/SENERGY-Platform/device-repository/lib/client"
+	"github.com/SENERGY-Platform/models/go/models"
 	"github.com/julienschmidt/httprouter"
 	"github.com/swaggo/swag"
 )
@@ -34,7 +37,7 @@ const (
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /current/devices/{id} [get]
-func GetCurrentDeviceState(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func GetCurrentDeviceState(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodGet, "/current/devices/:" + pathParamID, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName(pathParamID)
 		if id == "" {
@@ -84,7 +87,7 @@ func GetCurrentDeviceState(ctrl *controller.Controller) (string, string, httprou
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /current/gateways/{id} [get]
-func GetCurrentGatewayState(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func GetCurrentGatewayState(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodGet, "/current/gateways/:" + pathParamID, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName(pathParamID)
 		if id == "" {
@@ -124,7 +127,7 @@ func GetCurrentGatewayState(ctrl *controller.Controller) (string, string, httpro
 
 // PostQueryBaseStatesMap godoc
 // @Summary Query current states
-// @Description Query current states for multiple IDs (supported: devices, gateways/hubs).
+// @Description Query current states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations).
 // @Tags Current states
 // @Accept json
 // @Produce	json
@@ -134,7 +137,7 @@ func GetCurrentGatewayState(ctrl *controller.Controller) (string, string, httpro
 // @Failure	400 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /current/query/map [post]
-func PostQueryBaseStatesMap(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostQueryBaseStatesMap(ctrl *controller.Controller, dr deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/current/query/map", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		var query model.QueryBase
 		err := json.NewDecoder(request.Body).Decode(&query)
@@ -143,6 +146,11 @@ func PostQueryBaseStatesMap(ctrl *controller.Controller) (string, string, httpro
 			return
 		}
 		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.IDs)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		query.IDs, err = resolveDeviceIds(dr, util.GetAuthToken(request), query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -162,7 +170,7 @@ func PostQueryBaseStatesMap(ctrl *controller.Controller) (string, string, httpro
 
 // PostQueryBaseStatesList godoc
 // @Summary Query current states
-// @Description Query current states for multiple IDs (supported: devices, gateways/hubs).
+// @Description Query current states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations).
 // @Tags Current states
 // @Accept json
 // @Produce	json
@@ -172,7 +180,7 @@ func PostQueryBaseStatesMap(ctrl *controller.Controller) (string, string, httpro
 // @Failure	400 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /current/query/list [post]
-func PostQueryBaseStatesList(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostQueryBaseStatesList(ctrl *controller.Controller, dr deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/current/query/list", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		var query model.QueryBase
 		err := json.NewDecoder(request.Body).Decode(&query)
@@ -181,6 +189,11 @@ func PostQueryBaseStatesList(ctrl *controller.Controller) (string, string, httpr
 			return
 		}
 		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.IDs)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		query.IDs, err = resolveDeviceIds(dr, util.GetAuthToken(request), query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -213,7 +226,7 @@ func PostQueryBaseStatesList(ctrl *controller.Controller) (string, string, httpr
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /historical/devices/{id} [get]
-func GetHistoricalDeviceStates(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func GetHistoricalDeviceStates(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodGet, "/historical/devices/:" + pathParamID, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName(pathParamID)
 		if id == "" {
@@ -271,7 +284,7 @@ func GetHistoricalDeviceStates(ctrl *controller.Controller) (string, string, htt
 // @Failure	401 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /historical/gateways/{id} [get]
-func GetHistoricalGatewayStates(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func GetHistoricalGatewayStates(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodGet, "/historical/gateways/:" + pathParamID, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName(pathParamID)
 		if id == "" {
@@ -326,7 +339,7 @@ func GetHistoricalGatewayStates(ctrl *controller.Controller) (string, string, ht
 // @Failure	400 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /historical/query/map [post]
-func PostQueryHistoricalStatesMap(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostQueryHistoricalStatesMap(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/historical/query/map", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		var query model.QueryHistorical
 		err := json.NewDecoder(request.Body).Decode(&query)
@@ -364,7 +377,7 @@ func PostQueryHistoricalStatesMap(ctrl *controller.Controller) (string, string, 
 // @Failure	400 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /historical/query/list [post]
-func PostQueryHistoricalStatesList(ctrl *controller.Controller) (string, string, httprouter.Handle) {
+func PostQueryHistoricalStatesList(ctrl *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/historical/query/list", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		var query model.QueryHistorical
 		err := json.NewDecoder(request.Body).Decode(&query)
@@ -392,7 +405,7 @@ func PostQueryHistoricalStatesList(ctrl *controller.Controller) (string, string,
 
 //go:generate go install github.com/swaggo/swag/cmd/swag@latest
 //go:generate swag init -o ../../docs --parseDependency -d .. -g api/api.go
-func GetSwaggerDoc(_ *controller.Controller) (string, string, httprouter.Handle) {
+func GetSwaggerDoc(_ *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodGet, "/doc", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		doc, err := swag.ReadDoc()
@@ -426,4 +439,34 @@ func parseHistoricalStatesQuery(query url.Values) (rng time.Duration, since time
 		}
 	}
 	return
+}
+
+func resolveDeviceIds(deviceRepoClient deviceRepo.Interface, token string, originalIds []string) (result []string, err error) {
+	ids := slices.Clone(originalIds)
+	result = []string{}
+	for _, id := range ids {
+		if strings.HasPrefix(id, models.DEVICE_GROUP_PREFIX) {
+			deviceGroup, err, _ := deviceRepoClient.ReadDeviceGroup(id, token, false)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, deviceGroup.DeviceIds...)
+		} else if strings.HasPrefix(id, models.LOCATION_PREFIX) {
+			location, err, _ := deviceRepoClient.GetLocation(id, token)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, location.DeviceIds...)
+			for _, deviceGroupId := range location.DeviceGroupIds {
+				deviceGroup, err, _ := deviceRepoClient.ReadDeviceGroup(deviceGroupId, token, false)
+				if err != nil {
+					return nil, err
+				}
+				result = append(result, deviceGroup.DeviceIds...)
+			}
+		} else {
+			result = append(result, id)
+		}
+	}
+	return result, nil
 }
