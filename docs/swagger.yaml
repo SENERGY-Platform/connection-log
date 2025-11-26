@@ -23,41 +23,25 @@ definitions:
     type: object
   model.Duration:
     enum:
-    - -9223372036854775808
-    - 9223372036854775807
     - 1
     - 1000
     - 1000000
     - 1000000000
     - 60000000000
-    - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
     - 1
     - 1000
     - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
     format: int64
     type: integer
     x-enum-varnames:
-    - minDuration
-    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
     - Second
     - Minute
-    - Hour
-    - minDuration
-    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
-    - Second
-    - Minute
-    - Hour
   model.HistoricalStates:
     properties:
       next_state:
@@ -72,14 +56,6 @@ definitions:
         description: All states within the selected time frame.
         items:
           $ref: '#/definitions/model.State'
-        type: array
-    type: object
-  model.QueryBase:
-    properties:
-      ids:
-        description: IDs for witch states are to be retrieved.
-        items:
-          type: string
         type: array
     type: object
   model.QueryHistorical:
@@ -102,6 +78,18 @@ definitions:
         description: Timestamp in RFC 3339 format, can be combined with 'range' or
           'since'.
         type: string
+    type: object
+  model.QueryWithAttributeFilter:
+    properties:
+      device_attribute_blacklist:
+        items:
+          $ref: '#/definitions/models.Attribute'
+        type: array
+      ids:
+        description: IDs for witch states are to be retrieved.
+        items:
+          type: string
+        type: array
     type: object
   model.ResourceCurrentState:
     properties:
@@ -134,6 +122,15 @@ definitions:
         type: boolean
       time:
         description: Timestamp in RFC 3339 format.
+        type: string
+    type: object
+  models.Attribute:
+    properties:
+      key:
+        type: string
+      origin:
+        type: string
+      value:
         type: string
     type: object
   models.Row:
@@ -235,14 +232,16 @@ paths:
     post:
       consumes:
       - application/json
-      description: 'Query current states for multiple IDs (supported: devices, gateways/hubs).'
+      description: 'Query current states for multiple IDs (supported: devices, gateways/hubs,
+        device-groups, locations).'
       parameters:
-      - description: query object
+      - description: query object, attribute value and origin will only be checked
+          if set, otherwise all values or origins will be blacklisted
         in: body
         name: query
         required: true
         schema:
-          $ref: '#/definitions/model.QueryBase'
+          $ref: '#/definitions/model.QueryWithAttributeFilter'
       produces:
       - application/json
       responses:
@@ -269,14 +268,16 @@ paths:
     post:
       consumes:
       - application/json
-      description: 'Query current states for multiple IDs (supported: devices, gateways/hubs).'
+      description: 'Query current states for multiple IDs (supported: devices, gateways/hubs,
+        device-groups, locations).'
       parameters:
-      - description: query object
+      - description: query object, attribute value and origin will only be checked
+          if set, otherwise all values or origins will be blacklisted
         in: body
         name: query
         required: true
         schema:
-          $ref: '#/definitions/model.QueryBase'
+          $ref: '#/definitions/model.QueryWithAttributeFilter'
       produces:
       - application/json
       responses:

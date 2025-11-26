@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/SENERGY-Platform/models/go/models"
 )
 
 const (
@@ -38,6 +40,11 @@ type State struct {
 
 type QueryBase struct {
 	IDs []string `json:"ids"` // IDs for witch states are to be retrieved.
+}
+
+type QueryWithAttributeFilter struct {
+	QueryBase
+	DeviceAttributeBlacklist []models.Attribute `json:"device_attribute_blacklist"`
 }
 
 type QueryHistorical struct {

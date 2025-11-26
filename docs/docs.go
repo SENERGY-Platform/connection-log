@@ -130,7 +130,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "Query current states for multiple IDs (supported: devices, gateways/hubs).",
+                "description": "Query current states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations).",
                 "consumes": [
                     "application/json"
                 ],
@@ -143,12 +143,12 @@ const docTemplate = `{
                 "summary": "Query current states",
                 "parameters": [
                     {
-                        "description": "query object",
+                        "description": "query object, attribute value and origin will only be checked if set, otherwise all values or origins will be blacklisted",
                         "name": "query",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.QueryBase"
+                            "$ref": "#/definitions/model.QueryWithAttributeFilter"
                         }
                     }
                 ],
@@ -184,7 +184,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "Query current states for multiple IDs (supported: devices, gateways/hubs).",
+                "description": "Query current states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations).",
                 "consumes": [
                     "application/json"
                 ],
@@ -197,12 +197,12 @@ const docTemplate = `{
                 "summary": "Query current states",
                 "parameters": [
                     {
-                        "description": "query object",
+                        "description": "query object, attribute value and origin will only be checked if set, otherwise all values or origins will be blacklisted",
                         "name": "query",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.QueryBase"
+                            "$ref": "#/definitions/model.QueryWithAttributeFilter"
                         }
                     }
                 ],
@@ -1115,40 +1115,24 @@ const docTemplate = `{
             "type": "integer",
             "format": "int64",
             "enum": [
-                -9223372036854775808,
-                9223372036854775807,
                 1,
                 1000,
                 1000000,
                 1000000000,
                 60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
                 1,
                 1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000
+                1000000
             ],
             "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
                 "Second",
                 "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour"
+                "Millisecond"
             ]
         },
         "model.HistoricalStates": {
@@ -1179,18 +1163,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.QueryBase": {
-            "type": "object",
-            "properties": {
-                "ids": {
-                    "description": "IDs for witch states are to be retrieved.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "model.QueryHistorical": {
             "type": "object",
             "properties": {
@@ -1216,6 +1188,24 @@ const docTemplate = `{
                 "until": {
                     "description": "Timestamp in RFC 3339 format, can be combined with 'range' or 'since'.",
                     "type": "string"
+                }
+            }
+        },
+        "model.QueryWithAttributeFilter": {
+            "type": "object",
+            "properties": {
+                "device_attribute_blacklist": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Attribute"
+                    }
+                },
+                "ids": {
+                    "description": "IDs for witch states are to be retrieved.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -1269,6 +1259,20 @@ const docTemplate = `{
                 },
                 "time": {
                     "description": "Timestamp in RFC 3339 format.",
+                    "type": "string"
+                }
+            }
+        },
+        "models.Attribute": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "origin": {
+                    "type": "string"
+                },
+                "value": {
                     "type": "string"
                 }
             }

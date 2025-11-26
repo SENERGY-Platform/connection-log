@@ -132,30 +132,36 @@ func GetCurrentGatewayState(ctrl *controller.Controller, _ deviceRepo.Interface)
 // @Accept json
 // @Produce	json
 // @Security Bearer
-// @Param query body model.QueryBase true "query object"
+// @Param query body model.QueryWithAttributeFilter true "query object, attribute value and origin will only be checked if set, otherwise all values or origins will be blacklisted"
 // @Success	200 {object} map[string]bool "current states mapped to IDs"
 // @Failure	400 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /current/query/map [post]
 func PostQueryBaseStatesMap(ctrl *controller.Controller, dr deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/current/query/map", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		var query model.QueryBase
+		var query model.QueryWithAttributeFilter
 		err := json.NewDecoder(request.Body).Decode(&query)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.IDs)
+		token := util.GetAuthToken(request)
+		query.IDs, err = ctrl.PermissionsFilterIDs(token, query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		query.IDs, err = resolveDeviceIds(dr, util.GetAuthToken(request), query.IDs)
+		query.IDs, err = resolveDeviceIds(dr, token, query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		res, err := ctrl.QueryBaseStatesMap(request.Context(), query)
+		query.IDs, err = filterDevices(dr, token, query.IDs, query.DeviceAttributeBlacklist)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		res, err := ctrl.QueryBaseStatesMap(request.Context(), query.QueryBase)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -175,30 +181,36 @@ func PostQueryBaseStatesMap(ctrl *controller.Controller, dr deviceRepo.Interface
 // @Accept json
 // @Produce	json
 // @Security Bearer
-// @Param query body model.QueryBase true "query object"
+// @Param query body model.QueryWithAttributeFilter true "query object, attribute value and origin will only be checked if set, otherwise all values or origins will be blacklisted"
 // @Success	200 {array} model.ResourceCurrentState "current states"
 // @Failure	400 {string} string "error message"
 // @Failure	500 {string} string "error message"
 // @Router /current/query/list [post]
 func PostQueryBaseStatesList(ctrl *controller.Controller, dr deviceRepo.Interface) (string, string, httprouter.Handle) {
 	return http.MethodPost, "/current/query/list", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		var query model.QueryBase
+		var query model.QueryWithAttributeFilter
 		err := json.NewDecoder(request.Body).Decode(&query)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		query.IDs, err = ctrl.PermissionsFilterIDs(util.GetAuthToken(request), query.IDs)
+		token := util.GetAuthToken(request)
+		query.IDs, err = ctrl.PermissionsFilterIDs(token, query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		query.IDs, err = resolveDeviceIds(dr, util.GetAuthToken(request), query.IDs)
+		query.IDs, err = resolveDeviceIds(dr, token, query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		res, err := ctrl.QueryBaseStatesSlice(request.Context(), query)
+		query.IDs, err = filterDevices(dr, token, query.IDs, query.DeviceAttributeBlacklist)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		res, err := ctrl.QueryBaseStatesSlice(request.Context(), query.QueryBase)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -469,4 +481,41 @@ func resolveDeviceIds(deviceRepoClient deviceRepo.Interface, token string, origi
 		}
 	}
 	return result, nil
+}
+
+func filterDevices(deviceRepoClient deviceRepo.Interface, token string, ids []string, deviceAttributeBlacklist []models.Attribute) (filteredIds []string, err error) {
+	if len(deviceAttributeBlacklist) == 0 {
+		return ids, nil
+	}
+	filteredIds = []string{}
+	deviceIds := []string{}
+	for _, id := range ids {
+		if !strings.HasPrefix(id, models.DEVICE_PREFIX) {
+			// never filtered
+			filteredIds = append(filteredIds, id)
+			continue
+		}
+		deviceIds = append(deviceIds, id)
+	}
+	if len(deviceIds) == 0 {
+		return
+	}
+	devices, err, _ := deviceRepoClient.ListDevices(token, deviceRepo.DeviceListOptions{Ids: deviceIds})
+	if err != nil {
+		return nil, err
+	}
+outer:
+	for _, device := range devices {
+		for _, blackListAttribute := range deviceAttributeBlacklist {
+			for _, deviceAttribute := range device.Attributes {
+				if blackListAttribute.Key == deviceAttribute.Key &&
+					(len(blackListAttribute.Value) == 0 || blackListAttribute.Value == deviceAttribute.Value) &&
+					(len(blackListAttribute.Origin) == 0 || blackListAttribute.Origin == deviceAttribute.Origin) {
+					continue outer
+				}
+			}
+		}
+		filteredIds = append(filteredIds, device.Id)
+	}
+	return
 }
