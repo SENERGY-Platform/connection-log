@@ -45,6 +45,7 @@ var routes = []func(ctrl *controller.Controller, dr deviceRepo.Interface) (m, p 
 	GetHistoricalDeviceStates,
 	GetHistoricalGatewayStates,
 	PostQueryHistoricalStatesMap,
+	PostQueryHistoricalStatesMapOriginal,
 	PostQueryHistoricalStatesList,
 	GetSwaggerDoc,
 }

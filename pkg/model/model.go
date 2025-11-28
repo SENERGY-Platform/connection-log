@@ -33,6 +33,11 @@ type HistoricalStates struct {
 	NextState *State  `json:"next_state"` // First state succeeding the selected time frame.
 }
 
+type HistoricalStatesWithId struct {
+	HistoricalStates
+	Id string `json:"id"`
+}
+
 type State struct {
 	Time      time.Time `json:"time"` // Timestamp in RFC 3339 format.
 	Connected bool      `json:"connected"`

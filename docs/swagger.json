@@ -528,6 +528,63 @@
                 }
             }
         },
+        "/historical/query/map-original": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Query current historical states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Historical states"
+                ],
+                "summary": "Query historical states",
+                "parameters": [
+                    {
+                        "description": "query object",
+                        "name": "query",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QueryHistorical"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "historical states mapped to IDs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/model.HistoricalStatesWithId"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/intern/history/device/{duration}": {
             "post": {
                 "security": [
@@ -1168,17 +1225,9 @@
                 1000,
                 1000000,
                 1000000000,
-                1,
-                1000,
-                1000000,
-                1000000000,
                 60000000000
             ],
             "x-enum-varnames": [
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
@@ -1189,6 +1238,37 @@
         "model.HistoricalStates": {
             "type": "object",
             "properties": {
+                "next_state": {
+                    "description": "First state succeeding the selected time frame.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.State"
+                        }
+                    ]
+                },
+                "prev_state": {
+                    "description": "Last state preceding the selected time frame.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.State"
+                        }
+                    ]
+                },
+                "states": {
+                    "description": "All states within the selected time frame.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.State"
+                    }
+                }
+            }
+        },
+        "model.HistoricalStatesWithId": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
                 "next_state": {
                     "description": "First state succeeding the selected time frame.",
                     "allOf": [

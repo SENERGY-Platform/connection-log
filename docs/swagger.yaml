@@ -27,10 +27,6 @@ definitions:
     - 1000
     - 1000000
     - 1000000000
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
     - 60000000000
     format: int64
     type: integer
@@ -39,13 +35,27 @@ definitions:
     - Microsecond
     - Millisecond
     - Second
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
     - Minute
   model.HistoricalStates:
     properties:
+      next_state:
+        allOf:
+        - $ref: '#/definitions/model.State'
+        description: First state succeeding the selected time frame.
+      prev_state:
+        allOf:
+        - $ref: '#/definitions/model.State'
+        description: Last state preceding the selected time frame.
+      states:
+        description: All states within the selected time frame.
+        items:
+          $ref: '#/definitions/model.State'
+        type: array
+    type: object
+  model.HistoricalStatesWithId:
+    properties:
+      id:
+        type: string
       next_state:
         allOf:
         - $ref: '#/definitions/model.State'
@@ -492,6 +502,43 @@ paths:
           schema:
             additionalProperties:
               $ref: '#/definitions/model.HistoricalStates'
+            type: object
+        "400":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Query historical states
+      tags:
+      - Historical states
+  /historical/query/map-original:
+    post:
+      consumes:
+      - application/json
+      description: 'Query current historical states for multiple IDs (supported: devices,
+        gateways/hubs, device-groups, locations).'
+      parameters:
+      - description: query object
+        in: body
+        name: query
+        required: true
+        schema:
+          $ref: '#/definitions/model.QueryHistorical'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: historical states mapped to IDs
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/model.HistoricalStatesWithId'
+              type: array
             type: object
         "400":
           description: error message

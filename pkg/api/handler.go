@@ -479,6 +479,69 @@ func PostQueryHistoricalStatesList(ctrl *controller.Controller, _ deviceRepo.Int
 	}
 }
 
+// PostQueryHistoricalStatesMapOriginal godoc
+// @Summary Query historical states
+// @Description Query current historical states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations).
+// @Tags Historical states
+// @Accept json
+// @Produce	json
+// @Security Bearer
+// @Param query body model.QueryHistorical true "query object"
+// @Success	200 {object} map[string][]model.HistoricalStatesWithId "historical states mapped to IDs"
+// @Failure	400 {string} string "error message"
+// @Failure	500 {string} string "error message"
+// @Router /historical/query/map-original [post]
+func PostQueryHistoricalStatesMapOriginal(ctrl *controller.Controller, dr deviceRepo.Interface) (string, string, httprouter.Handle) {
+	return http.MethodPost, "/historical/query/map-original", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		var query model.QueryHistorical
+		err := json.NewDecoder(request.Body).Decode(&query)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		token := util.GetAuthToken(request)
+		query.IDs, err = ctrl.PermissionsFilterIDs(token, query.IDs)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var deviceIdToInputId map[string]string
+		query.IDs, deviceIdToInputId, err = resolveDeviceIds(dr, token, query.IDs)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		states, err := ctrl.QueryHistoricalStatesMap(request.Context(), query)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		res := map[string][]model.HistoricalStatesWithId{}
+		for deviceId, state := range states {
+			stateWithId := model.HistoricalStatesWithId{
+				HistoricalStates: state,
+				Id:               deviceId,
+			}
+			inputId, ok := deviceIdToInputId[deviceId]
+			if ok {
+				arr, ok := res[inputId]
+				if !ok {
+					arr = []model.HistoricalStatesWithId{}
+				}
+				arr = append(arr, stateWithId)
+				res[inputId] = arr
+			} else {
+				res[deviceId] = []model.HistoricalStatesWithId{stateWithId}
+			}
+		}
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if err = json.NewEncoder(writer).Encode(res); err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 //go:generate go install github.com/swaggo/swag/cmd/swag@latest
 //go:generate swag init -o ../../docs --parseDependency -d .. -g api/api.go
 func GetSwaggerDoc(_ *controller.Controller, _ deviceRepo.Interface) (string, string, httprouter.Handle) {
