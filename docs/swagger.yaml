@@ -27,10 +27,11 @@ definitions:
     - 1000
     - 1000000
     - 1000000000
-    - 60000000000
     - 1
     - 1000
     - 1000000
+    - 1000000000
+    - 60000000000
     format: int64
     type: integer
     x-enum-varnames:
@@ -38,10 +39,11 @@ definitions:
     - Microsecond
     - Millisecond
     - Second
-    - Minute
     - Nanosecond
     - Microsecond
     - Millisecond
+    - Second
+    - Minute
   model.HistoricalStates:
     properties:
       next_state:
@@ -298,6 +300,44 @@ paths:
       security:
       - Bearer: []
       summary: Query current states
+      tags:
+      - Current states
+  /current/query/map-original:
+    post:
+      consumes:
+      - application/json
+      description: 'Query current states for multiple IDs (supported: devices, gateways/hubs,
+        device-groups, locations).'
+      parameters:
+      - description: query object, attribute value and origin will only be checked
+          if set, otherwise all values or origins will be blacklisted
+        in: body
+        name: query
+        required: true
+        schema:
+          $ref: '#/definitions/model.QueryWithAttributeFilter'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: current states mapped to requested IDs
+          schema:
+            additionalProperties:
+              items:
+                type: boolean
+              type: array
+            type: object
+        "400":
+          description: error message
+          schema:
+            type: string
+        "500":
+          description: error message
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Query current states and return with mapping to original request Ids
       tags:
       - Current states
   /historical/devices/{id}:

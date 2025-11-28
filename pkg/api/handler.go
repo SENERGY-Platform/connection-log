@@ -151,7 +151,7 @@ func PostQueryBaseStatesMap(ctrl *controller.Controller, dr deviceRepo.Interface
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		query.IDs, err = resolveDeviceIds(dr, token, query.IDs)
+		query.IDs, _, err = resolveDeviceIds(dr, token, query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -200,7 +200,7 @@ func PostQueryBaseStatesList(ctrl *controller.Controller, dr deviceRepo.Interfac
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		query.IDs, err = resolveDeviceIds(dr, token, query.IDs)
+		query.IDs, _, err = resolveDeviceIds(dr, token, query.IDs)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -214,6 +214,70 @@ func PostQueryBaseStatesList(ctrl *controller.Controller, dr deviceRepo.Interfac
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if err = json.NewEncoder(writer).Encode(res); err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+// PostQueryWithAttributeFilterMapOriginal godoc
+// @Summary Query current states and return with mapping to original request Ids
+// @Description Query current states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations).
+// @Tags Current states
+// @Accept json
+// @Produce	json
+// @Security Bearer
+// @Param query body model.QueryWithAttributeFilter true "query object, attribute value and origin will only be checked if set, otherwise all values or origins will be blacklisted"
+// @Success	200 {object} map[string][]bool "current states mapped to requested IDs"
+// @Failure	400 {string} string "error message"
+// @Failure	500 {string} string "error message"
+// @Router /current/query/map-original [post]
+func PostQueryWithAttributeFilterMapOriginal(ctrl *controller.Controller, dr deviceRepo.Interface) (string, string, httprouter.Handle) {
+	return http.MethodPost, "/current/query/map-original", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		var query model.QueryWithAttributeFilter
+		err := json.NewDecoder(request.Body).Decode(&query)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		token := util.GetAuthToken(request)
+		query.IDs, err = ctrl.PermissionsFilterIDs(token, query.IDs)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var deviceIdToInputId map[string]string
+		query.IDs, deviceIdToInputId, err = resolveDeviceIds(dr, token, query.IDs)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		query.IDs, err = filterDevices(dr, token, query.IDs, query.DeviceAttributeBlacklist)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		states, err := ctrl.QueryBaseStatesMap(request.Context(), query.QueryBase)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		res := map[string][]bool{}
+		for deviceId, state := range states {
+			inputId, ok := deviceIdToInputId[deviceId]
+			if ok {
+				arr, ok := res[inputId]
+				if !ok {
+					arr = []bool{}
+				}
+				arr = append(arr, state)
+				res[inputId] = arr
+			} else {
+				res[deviceId] = []bool{state}
+			}
 		}
 		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if err = json.NewEncoder(writer).Encode(res); err != nil {
@@ -453,34 +517,44 @@ func parseHistoricalStatesQuery(query url.Values) (rng time.Duration, since time
 	return
 }
 
-func resolveDeviceIds(deviceRepoClient deviceRepo.Interface, token string, originalIds []string) (result []string, err error) {
+func resolveDeviceIds(deviceRepoClient deviceRepo.Interface, token string, originalIds []string) (result []string, deviceIdToInputId map[string]string, err error) {
 	ids := slices.Clone(originalIds)
 	result = []string{}
+	deviceIdToInputId = map[string]string{}
 	for _, id := range ids {
 		if strings.HasPrefix(id, models.DEVICE_GROUP_PREFIX) {
 			deviceGroup, err, _ := deviceRepoClient.ReadDeviceGroup(id, token, false)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			result = append(result, deviceGroup.DeviceIds...)
+			for _, deviceId := range deviceGroup.DeviceIds {
+				deviceIdToInputId[deviceId] = id
+			}
 		} else if strings.HasPrefix(id, models.LOCATION_PREFIX) {
 			location, err, _ := deviceRepoClient.GetLocation(id, token)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			result = append(result, location.DeviceIds...)
+			for _, deviceId := range location.DeviceIds {
+				deviceIdToInputId[deviceId] = id
+			}
 			for _, deviceGroupId := range location.DeviceGroupIds {
 				deviceGroup, err, _ := deviceRepoClient.ReadDeviceGroup(deviceGroupId, token, false)
 				if err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 				result = append(result, deviceGroup.DeviceIds...)
+				for _, deviceId := range deviceGroup.DeviceIds {
+					deviceIdToInputId[deviceId] = id
+				}
 			}
 		} else {
 			result = append(result, id)
 		}
 	}
-	return result, nil
+	return result, deviceIdToInputId, nil
 }
 
 func filterDevices(deviceRepoClient deviceRepo.Interface, token string, ids []string, deviceAttributeBlacklist []models.Attribute) (filteredIds []string, err error) {

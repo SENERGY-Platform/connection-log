@@ -231,6 +231,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/current/query/map-original": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Query current states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Current states"
+                ],
+                "summary": "Query current states and return with mapping to original request Ids",
+                "parameters": [
+                    {
+                        "description": "query object, attribute value and origin will only be checked if set, otherwise all values or origins will be blacklisted",
+                        "name": "query",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QueryWithAttributeFilter"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "current states mapped to requested IDs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/historical/devices/{id}": {
             "get": {
                 "security": [
@@ -1119,20 +1176,22 @@ const docTemplate = `{
                 1000,
                 1000000,
                 1000000000,
-                60000000000,
                 1,
                 1000,
-                1000000
+                1000000,
+                1000000000,
+                60000000000
             ],
             "x-enum-varnames": [
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
                 "Second",
-                "Minute",
                 "Nanosecond",
                 "Microsecond",
-                "Millisecond"
+                "Millisecond",
+                "Second",
+                "Minute"
             ]
         },
         "model.HistoricalStates": {
