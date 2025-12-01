@@ -225,7 +225,7 @@ func PostQueryBaseStatesList(ctrl *controller.Controller, dr deviceRepo.Interfac
 
 // PostQueryWithAttributeFilterMapOriginal godoc
 // @Summary Query current states and return with mapping to original request Ids
-// @Description Query current states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations).
+// @Description Query current states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations). If no IDs are provided, all accessible device IDs will be queried. Device-groups and locations will be resolved to their device IDs. The response maps the results back to the original request IDs.
 // @Tags Current states
 // @Accept json
 // @Produce	json
@@ -244,16 +244,25 @@ func PostQueryWithAttributeFilterMapOriginal(ctrl *controller.Controller, dr dev
 			return
 		}
 		token := util.GetAuthToken(request)
-		query.IDs, err = ctrl.PermissionsFilterIDs(token, query.IDs)
-		if err != nil {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
 		var deviceIdToInputId map[string]string
-		query.IDs, deviceIdToInputId, err = resolveDeviceIds(dr, token, query.IDs)
-		if err != nil {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
+		if len(query.IDs) == 0 {
+			query.IDs, err = ctrl.ListIds(token, "devices")
+			if err != nil {
+				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			query.IDs, err = ctrl.PermissionsFilterIDs(token, query.IDs)
+			if err != nil {
+				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			query.IDs, deviceIdToInputId, err = resolveDeviceIds(dr, token, query.IDs)
+			if err != nil {
+				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 		query.IDs, err = filterDevices(dr, token, query.IDs, query.DeviceAttributeBlacklist)
 		if err != nil {
@@ -277,6 +286,16 @@ func PostQueryWithAttributeFilterMapOriginal(ctrl *controller.Controller, dr dev
 				res[inputId] = arr
 			} else {
 				res[deviceId] = []bool{state}
+			}
+		}
+		for _, queryId := range query.IDs {
+			_, ok := deviceIdToInputId[queryId]
+			if ok {
+				continue
+			}
+			_, ok = res[queryId]
+			if !ok {
+				res[queryId] = []bool{}
 			}
 		}
 		writer.Header().Set("Content-Type", "application/json; charset=utf-8")

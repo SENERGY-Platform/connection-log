@@ -75,6 +75,14 @@ func CheckAccess(permV2Url string, token string, kind string, ids []string) (res
 	return result, nil
 }
 
+func (this *Controller) ListIds(token string, kind string) (ids []string, err error) {
+	ids, err, _ = client.New(this.config.PermissionsV2Url).ListAccessibleResourceIds(token, kind, client.ListOptions{}, client.Execute)
+	if err != nil {
+		return ids, err
+	}
+	return ids, nil
+}
+
 type QueryMessage struct {
 	Resource string         `json:"resource"`
 	Find     *QueryFind     `json:"find"`

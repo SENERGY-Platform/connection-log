@@ -238,7 +238,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "Query current states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations).",
+                "description": "Query current states for multiple IDs (supported: devices, gateways/hubs, device-groups, locations). If no IDs are provided, all accessible device IDs will be queried. Device-groups and locations will be resolved to their device IDs. The response maps the results back to the original request IDs.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1233,9 +1233,17 @@ const docTemplate = `{
                 1000,
                 1000000,
                 1000000000,
+                1,
+                1000,
+                1000000,
+                1000000000,
                 60000000000
             ],
             "x-enum-varnames": [
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
