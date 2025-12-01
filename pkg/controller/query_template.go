@@ -12,6 +12,7 @@ const (
 	statesTimeGrtEqStr      = `SELECT "time", "connected" FROM "{{.Kind}}" WHERE time >= '{{.Timestamp}}' AND ({{range $index, $element := .Id}} {{if $index}} OR {{end}} "{{$.Kind}}" = '{{$element}}' {{end}}) GROUP BY "{{.Kind}}";`
 	statesTimeLesEqStr      = `SELECT "time", "connected" FROM "{{.Kind}}" WHERE time <= '{{.Timestamp}}' AND ({{range $index, $element := .Id}} {{if $index}} OR {{end}} "{{$.Kind}}" = '{{$element}}' {{end}}) GROUP BY "{{.Kind}}";`
 	statesTimeGrtEqLesEqStr = `SELECT "time", "connected" FROM "{{.Kind}}" WHERE time >= '{{.TimestampA}}' AND time <= '{{.TimestampB}}' AND ({{range $index, $element := .Id}} {{if $index}} OR {{end}} "{{$.Kind}}" = '{{$element}}' {{end}}) GROUP BY "{{.Kind}}";`
+	offlineSince            = `SELECT * FROM (SELECT LAST("connected") AS last_connected FROM "{{.Kind}}" WHERE ({{range $index, $element := .Id}} {{if $index}} OR {{end}} "{{$.Kind}}" = '{{$element}}' {{end}}) GROUP BY "{{.Kind}}") WHERE last_connected = false;`
 )
 
 type queryTemplates struct {
@@ -20,6 +21,7 @@ type queryTemplates struct {
 	statesTimeGrtEq      *template.Template
 	statesTimeLesEq      *template.Template
 	statesTimeGrtEqLesEq *template.Template
+	offlineSince         *template.Template
 }
 
 func newQueryTemplates() (*queryTemplates, error) {
@@ -45,6 +47,10 @@ func newQueryTemplates() (*queryTemplates, error) {
 	if err != nil {
 		return nil, err
 	}
+	qt.offlineSince, err = template.New("offlineSince").Parse(offlineSince)
+	if err != nil {
+		return nil, err
+	}
 	return &qt, nil
 }
 
@@ -66,6 +72,10 @@ func (t *queryTemplates) StatesTimeLesEqQuery(ids []string, kind string, timesta
 
 func (t *queryTemplates) StatesTimeGrtEqLesEqQuery(ids []string, kind string, timestampA, timestampB time.Time) (string, error) {
 	return execTemplate(t.statesTimeGrtEqLesEq, map[string]any{"Id": ids, "Kind": kind, "TimestampA": formatTimestamp(timestampA), "TimestampB": formatTimestamp(timestampB)})
+}
+
+func (t *queryTemplates) OfflineSinceQuery(ids []string, kind string) (string, error) {
+	return execTemplate(t.offlineSince, map[string]any{"Id": ids, "Kind": kind})
 }
 
 func execTemplate(t *template.Template, data any) (string, error) {

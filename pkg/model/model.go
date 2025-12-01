@@ -59,6 +59,12 @@ type QueryHistorical struct {
 	Until time.Time `json:"until"` // Timestamp in RFC 3339 format, can be combined with 'range' or 'since'.
 }
 
+type OfflineSinceResponse struct {
+	ID           string    `json:"id"`
+	Name         string    `json:"name,omitempty"`
+	OfflineSince time.Time `json:"offline_since"`
+}
+
 type Duration time.Duration
 
 func (d Duration) MarshalJSON() ([]byte, error) {

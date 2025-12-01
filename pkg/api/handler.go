@@ -306,6 +306,99 @@ func PostQueryWithAttributeFilterMapOriginal(ctrl *controller.Controller, dr dev
 	}
 }
 
+// OfflineSinceDevices godoc
+// @Summary Query offline timestamps of devices
+// @Description Query offline timestamps of devices with multiple IDs (supported: devices, device-groups, locations). If no IDs are provided, all accessible device IDs will be queried. Device-groups and locations will be resolved to their device IDs.
+// @Tags Offline List
+// @Accept json
+// @Produce	json
+// @Security Bearer
+// @Param query body model.QueryWithAttributeFilter true "query object, attribute value and origin will only be checked if set, otherwise all values or origins will be blacklisted"
+// @Param include-names query boolean false "include device names in the response"
+// @Success	200 {array} model.OfflineSinceResponse "offline timestamps by device IDs"
+// @Failure	400 {string} string "error message"
+// @Failure	500 {string} string "error message"
+// @Router /offline-since/devices [post]
+func OfflineSinceDevices(ctrl *controller.Controller, dr deviceRepo.Interface) (string, string, httprouter.Handle) {
+	return http.MethodPost, "/offline-since/devices", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		var query model.QueryWithAttributeFilter
+		err := json.NewDecoder(request.Body).Decode(&query)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		token := util.GetAuthToken(request)
+		if len(query.IDs) == 0 {
+			query.IDs, err = ctrl.ListIds(token, "devices")
+			if err != nil {
+				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			query.IDs, err = ctrl.PermissionsFilterIDs(token, query.IDs)
+			if err != nil {
+				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			query.IDs, _, err = resolveDeviceIds(dr, token, query.IDs)
+			if err != nil {
+				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+		query.IDs, err = filterDevices(dr, token, query.IDs, query.DeviceAttributeBlacklist)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		states, err := ctrl.GetOfflineSince(request.Context(), query.IDs, model.DeviceKind)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		includeNames := request.URL.Query().Get("include-names") == "true"
+		if includeNames {
+			deviceIds := []string{}
+			for _, state := range states {
+				deviceIds = append(deviceIds, state.ID)
+			}
+			devices, err, code := dr.ListDevices(token, deviceRepo.DeviceListOptions{Ids: deviceIds})
+			if err != nil {
+				http.Error(writer, err.Error(), code)
+				return
+			}
+			slices.SortFunc(devices, func(a, b models.Device) int {
+				return strings.Compare(a.Id, b.Id)
+			})
+			for i, state := range states {
+				idx, ok := slices.BinarySearchFunc(devices, models.Device{Id: state.ID}, func(a, b models.Device) int {
+					return strings.Compare(a.Id, b.Id)
+				})
+				if !ok {
+					continue
+				}
+				device := devices[idx]
+				for _, a := range device.Attributes {
+					if a.Key == "shared/nickname" {
+						state.Name = a.Value
+					}
+				}
+				if state.Name == "" {
+					state.Name = device.Name
+				}
+				states[i] = state
+			}
+		}
+
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if err = json.NewEncoder(writer).Encode(states); err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 // GetHistoricalDeviceStates godoc
 // @Summary Get historical device states
 // @Description Get the historical states of a device.

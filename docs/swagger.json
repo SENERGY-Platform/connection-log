@@ -1119,6 +1119,66 @@
                 }
             }
         },
+        "/offline-since/devices": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Query offline timestamps of devices with multiple IDs (supported: devices, device-groups, locations). If no IDs are provided, all accessible device IDs will be queried. Device-groups and locations will be resolved to their device IDs.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Offline List"
+                ],
+                "summary": "Query offline timestamps of devices",
+                "parameters": [
+                    {
+                        "description": "query object, attribute value and origin will only be checked if set, otherwise all values or origins will be blacklisted",
+                        "name": "query",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QueryWithAttributeFilter"
+                        }
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "include device names in the response",
+                        "name": "include-names",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "offline timestamps by device IDs",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.OfflineSinceResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/state/device/check": {
             "post": {
                 "security": [
@@ -1221,26 +1281,40 @@
             "type": "integer",
             "format": "int64",
             "enum": [
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
                 1000000000,
+                60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
                 1000000000,
-                60000000000
+                60000000000,
+                3600000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
                 "Second",
+                "Minute",
+                "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
                 "Second",
-                "Minute"
+                "Minute",
+                "Hour"
             ]
         },
         "model.HistoricalStates": {
@@ -1299,6 +1373,20 @@
                     "items": {
                         "$ref": "#/definitions/model.State"
                     }
+                }
+            }
+        },
+        "model.OfflineSinceResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "offline_since": {
+                    "type": "string"
                 }
             }
         },
