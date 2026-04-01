@@ -23,5 +23,7 @@
 
   "DeviceRepoUrl": "http://api.device-repository:8080",
 
-  "HttpClientTimeout": "30s"
+  "HttpClientTimeout": "30s",
+
+  "log_level": "info"
 }

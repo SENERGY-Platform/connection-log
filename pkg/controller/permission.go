@@ -18,7 +18,6 @@ package controller
 
 import (
 	"github.com/SENERGY-Platform/permissions-v2/pkg/client"
-	"log"
 )
 
 func (this *Controller) CheckRightList(token string, IDs []string, right string) (ok bool, err error) {
@@ -61,7 +60,7 @@ func (this *Controller) PermissionsFilterIDs(token string, IDs []string) ([]stri
 			}
 		}
 		if len(nOkIDs) > 0 {
-			log.Printf("access denied for IDs: %v", nOkIDs)
+			this.config.GetLogger().Warn("access denied for IDs", "ids", nOkIDs)
 		}
 	}
 	return okIDs, nil

@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
@@ -46,7 +45,7 @@ func PostCheckDeviceOnlineStates(ctrl *controller.Controller, _ deviceRepo.Inter
 		}
 		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
-			log.Println("ERROR: while checking rights", err)
+			ctrl.Config().GetLogger().Error("unable to check device rights", "error", err, "ids", ids, "right", "r")
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -56,7 +55,7 @@ func PostCheckDeviceOnlineStates(ctrl *controller.Controller, _ deviceRepo.Inter
 		}
 		result, err := ctrl.CheckDeviceOnlineStates(ids)
 		if err != nil {
-			log.Println("ERROR: while checking online states", err)
+			ctrl.Config().GetLogger().Error("unable to check device online states", "error", err, "ids", ids)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -97,7 +96,7 @@ func PostInternCheckDeviceOnlineStates(ctrl *controller.Controller, _ deviceRepo
 		}
 		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
-			log.Println("ERROR: while checking rights", err)
+			ctrl.Config().GetLogger().Error("unable to check device rights", "error", err, "ids", ids, "right", "r")
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -131,7 +130,7 @@ func PostInternCheckGatewayOnlineStates(ctrl *controller.Controller, _ deviceRep
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to decode body", "error", err)
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -148,7 +147,7 @@ func PostInternCheckGatewayOnlineStates(ctrl *controller.Controller, _ deviceRep
 		}
 		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
-			log.Println("ERROR: while checking rights", err)
+			ctrl.Config().GetLogger().Error("unable to check hub rights", "error", err, "ids", ids, "right", "r")
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -158,7 +157,7 @@ func PostInternCheckGatewayOnlineStates(ctrl *controller.Controller, _ deviceRep
 		}
 		result, err := ctrl.CheckGatewayOnlineStates(ids)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to check gateway online states", "error", err, "ids", ids)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -185,7 +184,7 @@ func PostInternGetDevicesHistory(ctrl *controller.Controller, _ deviceRepo.Inter
 		duration := ps.ByName("duration")
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to decode body", "error", err)
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -202,7 +201,7 @@ func PostInternGetDevicesHistory(ctrl *controller.Controller, _ deviceRepo.Inter
 		}
 		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
-			log.Println("ERROR: while checking rights", err)
+			ctrl.Config().GetLogger().Error("unable to check device rights", "error", err, "ids", ids, "right", "r")
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -212,7 +211,7 @@ func PostInternGetDevicesHistory(ctrl *controller.Controller, _ deviceRepo.Inter
 		}
 		result, err := ctrl.GetResourcesHistory(ids, "device", duration)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to get devices history", "error", err, "ids", ids, "duration", duration)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -239,7 +238,7 @@ func PostInternGetGatewaysHistory(ctrl *controller.Controller, _ deviceRepo.Inte
 		duration := ps.ByName("duration")
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to decode body", "error", err)
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -256,7 +255,7 @@ func PostInternGetGatewaysHistory(ctrl *controller.Controller, _ deviceRepo.Inte
 		}
 		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
-			log.Println("ERROR: while checking rights", err)
+			ctrl.Config().GetLogger().Error("unable to check hub rights", "error", err, "ids", ids, "right", "r")
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -266,7 +265,7 @@ func PostInternGetGatewaysHistory(ctrl *controller.Controller, _ deviceRepo.Inte
 		}
 		result, err := ctrl.GetResourcesHistory(ids, "gateway", duration)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to get gateways history", "error", err, "ids", ids, "duration", duration)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -291,7 +290,7 @@ func PostInternGetDevicesLogStart(ctrl *controller.Controller, _ deviceRepo.Inte
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to decode body", "error", err)
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -308,7 +307,7 @@ func PostInternGetDevicesLogStart(ctrl *controller.Controller, _ deviceRepo.Inte
 		}
 		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
-			log.Println("ERROR: while checking rights", err)
+			ctrl.Config().GetLogger().Error("unable to check device rights", "error", err, "ids", ids, "right", "r")
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -318,7 +317,7 @@ func PostInternGetDevicesLogStart(ctrl *controller.Controller, _ deviceRepo.Inte
 		}
 		result, err := ctrl.GetResourcesLogstart(ids, "device")
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to get devices logstart", "error", err, "ids", ids)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -343,7 +342,7 @@ func PostInternGetGatewaysLogStart(ctrl *controller.Controller, _ deviceRepo.Int
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to decode body", "error", err)
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -360,7 +359,7 @@ func PostInternGetGatewaysLogStart(ctrl *controller.Controller, _ deviceRepo.Int
 		}
 		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
-			log.Println("ERROR: while checking rights", err)
+			ctrl.Config().GetLogger().Error("unable to check hub rights", "error", err, "ids", ids, "right", "r")
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -370,7 +369,7 @@ func PostInternGetGatewaysLogStart(ctrl *controller.Controller, _ deviceRepo.Int
 		}
 		result, err := ctrl.GetResourcesLogstart(ids, "gateway")
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to get gateways logstart", "error", err, "ids", ids)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -397,7 +396,7 @@ func PostInternGetDevicesLogEdge(ctrl *controller.Controller, _ deviceRepo.Inter
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to decode body", "error", err)
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -414,7 +413,7 @@ func PostInternGetDevicesLogEdge(ctrl *controller.Controller, _ deviceRepo.Inter
 		}
 		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
-			log.Println("ERROR: while checking rights", err)
+			ctrl.Config().GetLogger().Error("unable to check device rights", "error", err, "ids", ids, "right", "r")
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -424,7 +423,7 @@ func PostInternGetDevicesLogEdge(ctrl *controller.Controller, _ deviceRepo.Inter
 		}
 		result, err := ctrl.GetResourcesLogEdge(ids, "device", duration)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to get devices log edge", "error", err, "ids", ids, "duration", duration)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -451,7 +450,7 @@ func PostInternGetGatewaysLogEdge(ctrl *controller.Controller, _ deviceRepo.Inte
 		ids := []string{}
 		err := json.NewDecoder(r.Body).Decode(&ids)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to decode body", "error", err)
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -468,7 +467,7 @@ func PostInternGetGatewaysLogEdge(ctrl *controller.Controller, _ deviceRepo.Inte
 		}
 		ok, err := ctrl.CheckRightList(util.GetAuthToken(r), ids, "r")
 		if err != nil {
-			log.Println("ERROR: while checking rights", err)
+			ctrl.Config().GetLogger().Error("unable to check hub rights", "error", err, "ids", ids, "right", "r")
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -478,7 +477,7 @@ func PostInternGetGatewaysLogEdge(ctrl *controller.Controller, _ deviceRepo.Inte
 		}
 		result, err := ctrl.GetResourcesLogEdge(ids, "gateway", duration)
 		if err != nil {
-			log.Println("ERROR:", err)
+			ctrl.Config().GetLogger().Error("unable to get gateways log edge", "error", err, "ids", ids, "duration", duration)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}

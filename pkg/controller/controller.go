@@ -2,12 +2,12 @@ package controller
 
 import (
 	"context"
+	"time"
+
 	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
 	influx "github.com/influxdata/influxdb1-client/v2"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
-	"time"
 )
 
 type Controller struct {
@@ -53,6 +53,10 @@ func New(config configuration.Config) (ctrl *Controller, err error) {
 }
 
 func (this *Controller) Close() {
-	log.Println("close mongo connection:", this.mongo.Disconnect(nil))
-	log.Println("close influx connection:", this.influx.Close())
+	this.config.GetLogger().Info("close mongo connection", "result", this.mongo.Disconnect(nil))
+	this.config.GetLogger().Info("close influx connection", "result", this.influx.Close())
+}
+
+func (this *Controller) Config() *configuration.Config {
+	return &this.config
 }

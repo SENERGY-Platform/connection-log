@@ -17,13 +17,13 @@
 package api
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/SENERGY-Platform/connection-log/pkg/api/util"
 	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
 	"github.com/SENERGY-Platform/connection-log/pkg/controller"
 	deviceRepo "github.com/SENERGY-Platform/device-repository/lib/client"
+	"github.com/SENERGY-Platform/service-commons/pkg/accesslog"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -62,15 +62,15 @@ var routes = []func(ctrl *controller.Controller, dr deviceRepo.Interface) (m, p 
 // @name Authorization
 // @BasePath /
 func StartRest(config configuration.Config, ctrl *controller.Controller) {
-	log.Println("start server on port: ", config.ServerPort)
+	config.GetLogger().Info("start server", "port", config.ServerPort)
 	router := httprouter.New()
 	dr := deviceRepo.NewClient(config.DeviceRepoUrl, nil)
 	for _, rf := range routes {
 		m, p, hf := rf(ctrl, dr)
 		router.Handle(m, p, hf)
-		log.Println("added route:", m, p)
+		config.GetLogger().Info("added route", "method", m, "path", p)
 	}
 	corseHandler := util.NewCors(router)
-	logger := util.NewLogger(corseHandler)
-	log.Println(http.ListenAndServe(":"+config.ServerPort, logger))
+	logger := accesslog.New(corseHandler)
+	config.GetLogger().Info("server stopped", "result", http.ListenAndServe(":"+config.ServerPort, logger))
 }

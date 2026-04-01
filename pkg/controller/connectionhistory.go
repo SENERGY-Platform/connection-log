@@ -20,10 +20,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	influx "github.com/influxdata/influxdb1-client/v2"
-	"log"
 	"reflect"
 	"text/template"
+
+	influx "github.com/influxdata/influxdb1-client/v2"
 )
 
 func parseTemplate(tmplName string, tmplString string, values interface{}) (result string, err error) {
@@ -70,12 +70,12 @@ func (this *Controller) GetResourcesHistory(ids []string, kind string, duration 
 	q := influx.NewQuery(query, this.config.InfluxdbDb, "s")
 	resp, err := this.influx.Query(q)
 	if err != nil {
-		log.Println("ERROR:", err, query)
+		this.config.GetLogger().Error("unable to get influx query result", "query", query, "error", err)
 		return result, err
 	}
 	err = resp.Error()
 	if err != nil {
-		log.Println("ERROR:", err, query)
+		this.config.GetLogger().Error("unable to get influx query result", "query", query, "error", err)
 	}
 	return resp.Results, err
 }
