@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"time"
+
 	"github.com/SENERGY-Platform/connection-log/pkg/model"
 	"github.com/influxdata/influxdb1-client/models"
 	influx "github.com/influxdata/influxdb1-client/v2"
-	"log"
-	"time"
 )
 
 func (this *Controller) GetHistoricalStates(ctx context.Context, id, kind string, rng time.Duration, since, until time.Time) (model.ResourceHistoricalStates, error) {
@@ -109,7 +110,7 @@ func handleSeries(resMap map[string]model.HistoricalStates, kind string, series 
 			continue
 		}
 		if err := handleRow(resMap, row.Values, key, resType); err != nil {
-			log.Println("ERROR:", err)
+			slog.Error("unable to handle row", "error", err)
 			continue
 		}
 	}
@@ -132,7 +133,7 @@ func handleRow(resMap map[string]model.HistoricalStates, rowValues [][]any, key 
 		for _, item := range rowValues {
 			state, err := rowItemToState(item)
 			if err != nil {
-				log.Println("ERROR:", err)
+				slog.Error("unable to transform row item to state", "error", err)
 				continue
 			}
 			resource.States = append(resource.States, state)
