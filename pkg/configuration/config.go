@@ -35,7 +35,10 @@ import (
 
 type Config struct {
 	MongoUrl               string `config:"secret"`
-	MongoTable             string
+	MongoUser              string
+	MongoPassword          string `config:"secret"`
+	MongoAuthSource        string
+	MongoDatabase          string
 	MongodbTimeout         int64
 	DeviceStateCollection  string
 	GatewayStateCollection string
@@ -65,6 +68,12 @@ func Load(location string) (config Config, err error) {
 		log.Println("error on config load: ", err)
 		return config, err
 	}
+	// defaults for fields a deployment's config.json may omit, e.g. because it predates them
+	config = Config{
+		MongoUrl:        "mongodb://localhost:27017",
+		MongoAuthSource: "admin",
+		MongoDatabase:   "connection_log",
+	}
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&config)
 	if err != nil {
@@ -74,6 +83,36 @@ func Load(location string) (config Config, err error) {
 	handleEnvironmentVars(&config)
 	setDefaultHttpClient(config)
 	return config, nil
+}
+
+func isSecret(field reflect.StructField) bool {
+	return strings.Contains(field.Tag.Get("config"), "secret")
+}
+
+// plainConfig has none of Config's methods, so formatting or marshalling it does not recurse.
+type plainConfig Config
+
+// masked returns a copy in which every non-empty field tagged config:"secret" is replaced.
+func (c Config) masked() plainConfig {
+	v := reflect.ValueOf(&c).Elem()
+	for i := 0; i < v.NumField(); i++ {
+		if isSecret(v.Type().Field(i)) && v.Field(i).Kind() == reflect.String && v.Field(i).String() != "" {
+			v.Field(i).SetString("***")
+		}
+	}
+	return plainConfig(c)
+}
+
+func (c Config) MarshalJSON() ([]byte, error) {
+	return json.Marshal(c.masked())
+}
+
+func (c Config) String() string {
+	return fmt.Sprintf("%+v", c.masked())
+}
+
+func (c Config) GoString() string {
+	return fmt.Sprintf("%#v", c.masked())
 }
 
 var camel = regexp.MustCompile("(^[^A-Z]*|[A-Z]*)([A-Z][^A-Z]+|$)")

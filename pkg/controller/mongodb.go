@@ -18,6 +18,8 @@ package controller
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
 	"github.com/SENERGY-Platform/connection-log/pkg/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -26,53 +28,66 @@ import (
 	"time"
 )
 
-func createIndexes(config configuration.Config, db *mongo.Client) error {
-	err := createDeviceIndexes(config, db)
-	if err != nil {
-		return err
+var (
+	errEmptyDatabase   = errors.New("mongo database name must not be empty")
+	errMissingPassword = errors.New("mongo password must not be empty when a mongo user is set")
+)
+
+func validateConfig(config configuration.Config) error {
+	if config.MongoDatabase == "" {
+		return errEmptyDatabase
 	}
-	return createGatewayIndexes(config, db)
+	if config.MongoUser != "" && config.MongoPassword == "" {
+		return errMissingPassword
+	}
+	return nil
 }
 
-func createDeviceIndexes(config configuration.Config, db *mongo.Client) error {
-	collection := db.Database(config.MongoTable).Collection(config.DeviceStateCollection)
-	indexname := "device_1"
-	indexkey := "device"
-	direction := 1
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys:    bson.D{{indexkey, direction}},
-		Options: options.Index().SetName(indexname),
-	})
-	return err
+// clientOptions applies the credentials after the URI so they replace any given in MongoUrl.
+func clientOptions(config configuration.Config) *options.ClientOptions {
+	opts := options.Client().ApplyURI(config.MongoUrl)
+	if config.MongoUser != "" {
+		opts.SetAuth(options.Credential{
+			Username:   config.MongoUser,
+			Password:   config.MongoPassword,
+			AuthSource: config.MongoAuthSource,
+		})
+	}
+	return opts
 }
 
-func createGatewayIndexes(config configuration.Config, db *mongo.Client) error {
-	collection := db.Database(config.MongoTable).Collection(config.DeviceStateCollection)
-	indexname := "gateway_1"
-	indexkey := "gateway"
-	direction := 1
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys:    bson.D{{indexkey, direction}},
-		Options: options.Index().SetName(indexname),
-	})
-	return err
+// connect runs listCollections on the service's database because Connect is lazy and ping needs no
+// authentication; unreachable servers and wrong or missing credentials then fail at startup.
+func connect(ctx context.Context, opts *options.ClientOptions, database string, timeout time.Duration) (*mongo.Client, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	client, err := mongo.Connect(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	listOpts := options.ListCollections().SetNameOnly(true).SetAuthorizedCollections(true)
+	if _, err = client.Database(database).ListCollectionNames(ctx, bson.D{}, listOpts); err != nil {
+		disconnectCtx, disconnectCancel := context.WithTimeout(context.Background(), timeout)
+		defer disconnectCancel()
+		_ = client.Disconnect(disconnectCtx)
+		return nil, fmt.Errorf("mongo startup check failed: %w", err)
+	}
+	return client, nil
 }
 
 func (this *Controller) getMongoDBCollection(kind string) *mongo.Collection {
 	if kind == model.GatewayKind {
-		return this.mongo.Database(this.config.MongoTable).Collection(this.config.GatewayStateCollection)
+		return this.mongo.Database(this.config.MongoDatabase).Collection(this.config.GatewayStateCollection)
 	}
-	return this.mongo.Database(this.config.MongoTable).Collection(this.config.DeviceStateCollection)
+	return this.mongo.Database(this.config.MongoDatabase).Collection(this.config.DeviceStateCollection)
 }
 
 func (this *Controller) getDeviceStateCollection() *mongo.Collection {
-	return this.mongo.Database(this.config.MongoTable).Collection(this.config.DeviceStateCollection)
+	return this.mongo.Database(this.config.MongoDatabase).Collection(this.config.DeviceStateCollection)
 }
 
 func (this *Controller) getGatewayStateCollection() *mongo.Collection {
-	return this.mongo.Database(this.config.MongoTable).Collection(this.config.GatewayStateCollection)
+	return this.mongo.Database(this.config.MongoDatabase).Collection(this.config.GatewayStateCollection)
 }
 
 type State struct {
