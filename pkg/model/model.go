@@ -65,6 +65,17 @@ type OfflineSinceResponse struct {
 	OfflineSince time.Time `json:"offline_since"`
 }
 
+// GatewayHealth is the latest health report of a gateway (MGW) as received by the platform.
+type GatewayHealth struct {
+	HubID      string          `json:"hub_id"`
+	State      int             `json:"state"`                       // 0 undetermined, 1 healthy, 2 unhealthy.
+	Reasons    []string        `json:"reasons"`                     // Short English descriptions of what is unhealthy, empty when healthy.
+	Report     json.RawMessage `json:"report" swaggertype:"object"` // The report as sent by the gateway.
+	ReportTime string          `json:"report_time"`                 // Time of the snapshot on the gateway, as sent by it (RFC 3339).
+	Received   time.Time       `json:"received"`                    // Time the platform received the report (RFC 3339).
+	Stale      bool            `json:"stale"`                       // True if the report was received longer ago than the configured stale age.
+}
+
 type Duration time.Duration
 
 func (d Duration) MarshalJSON() ([]byte, error) {

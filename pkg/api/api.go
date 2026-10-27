@@ -39,6 +39,8 @@ var routes = []func(ctrl *controller.Controller, dr deviceRepo.Interface) (m, p 
 	PostInternGetGatewaysLogEdge,
 	GetCurrentDeviceState,
 	GetCurrentGatewayState,
+	GetCurrentGatewayHealth,
+	PostQueryGatewayHealth,
 	PostQueryBaseStatesMap,
 	PostQueryWithAttributeFilterMapOriginal,
 	PostQueryBaseStatesList,

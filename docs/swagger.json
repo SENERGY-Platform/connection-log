@@ -115,6 +115,118 @@
                 }
             }
         },
+        "/current/gateways/{id}/health": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get the latest health report of a gateway. The report is marked stale if it was received longer ago than the configured stale age.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gateway health"
+                ],
+                "summary": "Get current gateway health",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "gateway id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "gateway health",
+                        "schema": {
+                            "$ref": "#/definitions/model.GatewayHealth"
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/current/query/health": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Query the latest health reports for multiple gateway IDs. If no IDs are provided, all accessible gateways are queried. Gateways the caller may not access are omitted, as are gateways without a report. The result is sorted by gateway ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gateway health"
+                ],
+                "summary": "Query current gateway health",
+                "parameters": [
+                    {
+                        "description": "query object",
+                        "name": "query",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QueryBase"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "gateway health",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.GatewayHealth"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/current/query/list": {
             "post": {
                 "security": [
@@ -1317,6 +1429,41 @@
                 "Hour"
             ]
         },
+        "model.GatewayHealth": {
+            "type": "object",
+            "properties": {
+                "hub_id": {
+                    "type": "string"
+                },
+                "reasons": {
+                    "description": "Short English descriptions of what is unhealthy, empty when healthy.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "received": {
+                    "description": "Time the platform received the report (RFC 3339).",
+                    "type": "string"
+                },
+                "report": {
+                    "description": "The report as sent by the gateway.",
+                    "type": "object"
+                },
+                "report_time": {
+                    "description": "Time of the snapshot on the gateway, as sent by it (RFC 3339).",
+                    "type": "string"
+                },
+                "stale": {
+                    "description": "True if the report was received longer ago than the configured stale age.",
+                    "type": "boolean"
+                },
+                "state": {
+                    "description": "0 undetermined, 1 healthy, 2 unhealthy.",
+                    "type": "integer"
+                }
+            }
+        },
         "model.HistoricalStates": {
             "type": "object",
             "properties": {
@@ -1387,6 +1534,18 @@
                 },
                 "offline_since": {
                     "type": "string"
+                }
+            }
+        },
+        "model.QueryBase": {
+            "type": "object",
+            "properties": {
+                "ids": {
+                    "description": "IDs for witch states are to be retrieved.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

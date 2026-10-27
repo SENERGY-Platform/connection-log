@@ -31,6 +31,7 @@ import (
 var (
 	errEmptyDatabase   = errors.New("mongo database name must not be empty")
 	errMissingPassword = errors.New("mongo password must not be empty when a mongo user is set")
+	errInvalidStaleAge = errors.New("gateway health stale age must be a positive duration")
 )
 
 func validateConfig(config configuration.Config) error {
@@ -40,7 +41,23 @@ func validateConfig(config configuration.Config) error {
 	if config.MongoUser != "" && config.MongoPassword == "" {
 		return errMissingPassword
 	}
+	if _, err := gatewayHealthStaleAge(config); err != nil {
+		return err
+	}
 	return nil
+}
+
+// gatewayHealthStaleAge parses the configured stale age; an empty value means the default.
+func gatewayHealthStaleAge(config configuration.Config) (time.Duration, error) {
+	value := config.GatewayHealthStaleAge
+	if value == "" {
+		value = configuration.DefaultGatewayHealthStaleAge
+	}
+	age, err := time.ParseDuration(value)
+	if err != nil || age <= 0 {
+		return 0, fmt.Errorf("%w: %q", errInvalidStaleAge, value)
+	}
+	return age, nil
 }
 
 // clientOptions applies the credentials after the URI so they replace any given in MongoUrl.

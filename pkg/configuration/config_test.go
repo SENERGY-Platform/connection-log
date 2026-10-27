@@ -196,6 +196,35 @@ func TestConfigFormattingLeavesEmptySecretEmpty(t *testing.T) {
 	}
 }
 
+func TestLoad_GatewayHealthDefaults(t *testing.T) {
+	t.Setenv("GATEWAY_HEALTH_COLLECTION", "")
+	t.Setenv("GATEWAY_HEALTH_STALE_AGE", "")
+	for name, location := range map[string]string{
+		"repo config":       "../../config.json",
+		"file omits fields": writeConfig(t, `{}`),
+	} {
+		cfg, err := Load(location)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.GatewayHealthCollection != "gatewayhealth" || cfg.GatewayHealthStaleAge != "15m" {
+			t.Errorf("%s: collection = %q, stale age = %q", name, cfg.GatewayHealthCollection, cfg.GatewayHealthStaleAge)
+		}
+	}
+}
+
+func TestLoad_GatewayHealthEnvNames(t *testing.T) {
+	t.Setenv("GATEWAY_HEALTH_COLLECTION", "health")
+	t.Setenv("GATEWAY_HEALTH_STALE_AGE", "5m")
+	cfg, err := Load("../../config.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.GatewayHealthCollection != "health" || cfg.GatewayHealthStaleAge != "5m" {
+		t.Errorf("collection = %q, stale age = %q", cfg.GatewayHealthCollection, cfg.GatewayHealthStaleAge)
+	}
+}
+
 func captureStdout(t *testing.T, f func()) string {
 	t.Helper()
 	r, w, err := os.Pipe()

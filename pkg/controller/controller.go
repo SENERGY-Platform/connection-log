@@ -14,6 +14,8 @@ type Controller struct {
 	mongo   *mongo.Client
 	influx  influx.Client
 	queries *queryTemplates
+
+	gatewayHealthStaleAge time.Duration
 }
 
 func New(config configuration.Config) (ctrl *Controller, err error) {
@@ -22,6 +24,10 @@ func New(config configuration.Config) (ctrl *Controller, err error) {
 		return
 	}
 	if err = validateConfig(config); err != nil {
+		return nil, err
+	}
+	staleAge, err := gatewayHealthStaleAge(config)
+	if err != nil {
 		return nil, err
 	}
 	mongoClient, err := connect(context.Background(), clientOptions(config), config.MongoDatabase, 10*time.Second)
@@ -45,6 +51,8 @@ func New(config configuration.Config) (ctrl *Controller, err error) {
 		influx:  influxClient,
 		config:  config,
 		queries: qt,
+
+		gatewayHealthStaleAge: staleAge,
 	}, nil
 }
 

@@ -33,6 +33,9 @@ import (
 	struct_logger "github.com/SENERGY-Platform/go-service-base/struct-logger"
 )
 
+// DefaultGatewayHealthStaleAge is three heartbeat intervals of the gateway health report.
+const DefaultGatewayHealthStaleAge = "15m"
+
 type Config struct {
 	MongoUrl               string `config:"secret"`
 	MongoUser              string
@@ -42,6 +45,11 @@ type Config struct {
 	MongodbTimeout         int64
 	DeviceStateCollection  string
 	GatewayStateCollection string
+
+	// GatewayHealthCollection is written by connection-log-worker; this service only reads it.
+	GatewayHealthCollection string
+	// GatewayHealthStaleAge is a Go duration; a report received longer ago is marked stale.
+	GatewayHealthStaleAge string
 
 	ServerPort       string
 	PermissionsV2Url string
@@ -73,6 +81,9 @@ func Load(location string) (config Config, err error) {
 		MongoUrl:        "mongodb://localhost:27017",
 		MongoAuthSource: "admin",
 		MongoDatabase:   "connection_log",
+
+		GatewayHealthCollection: "gatewayhealth",
+		GatewayHealthStaleAge:   DefaultGatewayHealthStaleAge,
 	}
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&config)

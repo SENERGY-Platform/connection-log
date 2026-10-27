@@ -8,6 +8,8 @@
 
   "DeviceStateCollection": "devicestate",
   "GatewayStateCollection": "gatewaystate",
+  "GatewayHealthCollection": "gatewayhealth",
+  "GatewayHealthStaleAge": "15m",
 
   "ServerPort": "8080",
   "LogLevel": "CALL",
