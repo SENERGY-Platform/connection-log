@@ -7,7 +7,7 @@ require (
 	github.com/SENERGY-Platform/go-service-base/struct-logger v0.8.0
 	github.com/SENERGY-Platform/models/go v0.0.0-20260710115411-5b8e00d6e038
 	github.com/SENERGY-Platform/permissions-v2 v0.0.47
-	github.com/SENERGY-Platform/service-commons v0.0.0-20261016083822-dec36fce00ad
+	github.com/SENERGY-Platform/service-commons v0.0.0-20261105091033-c7af74115e58
 	github.com/influxdata/influxdb1-client v0.0.0-20220302092344-a9ab5670611c
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/swaggo/swag v1.16.6
