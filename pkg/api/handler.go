@@ -684,7 +684,7 @@ func parseHistoricalStatesQuery(query url.Values) (rng time.Duration, since time
 		}
 	}
 	if untilStr := query.Get(queryParamUntil); untilStr != "" {
-		since, err = time.Parse(time.RFC3339, untilStr)
+		until, err = time.Parse(time.RFC3339, untilStr)
 		if err != nil {
 			return 0, time.Time{}, time.Time{}, err
 		}
