@@ -54,12 +54,13 @@ type Config struct {
 	ServerPort       string
 	PermissionsV2Url string
 
-	InfluxdbUrl     string
-	InfluxdbDb      string
-	InfluxdbUser    string `config:"secret"`
-	InfluxdbPw      string `config:"secret"`
-	InfluxdbTimeout int64
-	InfluxdbUseUTC  bool
+	// Postgres holds the connection history (TimescaleDB, tables device and gateway, written by connection-log-worker).
+	// PostgresPort is int64 because the environment loader below only sets string, int64, bool, float64, slice and map fields.
+	PostgresHost string
+	PostgresPort int64
+	PostgresUser string `config:"secret"`
+	PostgresPw   string `config:"secret"`
+	PostgresDb   string
 
 	DeviceRepoUrl string
 

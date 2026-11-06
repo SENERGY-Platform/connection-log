@@ -71,8 +71,6 @@ func TestStartAuthenticates(t *testing.T) {
 			MongodbTimeout:         10,
 			DeviceStateCollection:  "devicestate",
 			GatewayStateCollection: "gatewaystate",
-			// New also builds an influx client; it must be a well-formed address, though nothing connects to it here.
-			InfluxdbUrl: "http://localhost:1",
 		}
 	}
 

@@ -104,7 +104,6 @@ func newHealthTestController(t *testing.T) (*Controller, *mongo.Collection) {
 		MongodbTimeout:          10,
 		GatewayHealthCollection: "gatewayhealth",
 		GatewayHealthStaleAge:   "15m",
-		InfluxdbUrl:             "http://localhost:1",
 	}
 	ctrl, err := New(conf)
 	if err != nil {

@@ -5,24 +5,19 @@ import (
 	"time"
 
 	"github.com/SENERGY-Platform/connection-log/pkg/configuration"
-	influx "github.com/influxdata/influxdb1-client/v2"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Controller struct {
-	config  configuration.Config
-	mongo   *mongo.Client
-	influx  influx.Client
-	queries *queryTemplates
+	config configuration.Config
+	mongo  *mongo.Client
+	pg     *pgxpool.Pool
 
 	gatewayHealthStaleAge time.Duration
 }
 
 func New(config configuration.Config) (ctrl *Controller, err error) {
-	qt, err := newQueryTemplates()
-	if err != nil {
-		return
-	}
 	if err = validateConfig(config); err != nil {
 		return nil, err
 	}
@@ -35,22 +30,16 @@ func New(config configuration.Config) (ctrl *Controller, err error) {
 		return nil, err
 	}
 
-	influxClient, err := influx.NewHTTPClient(influx.HTTPConfig{
-		Addr:     config.InfluxdbUrl,
-		Username: config.InfluxdbUser,
-		Password: config.InfluxdbPw,
-		Timeout:  time.Duration(config.InfluxdbTimeout) * time.Second,
-	})
+	pool, err := newPostgresPool(context.Background(), config)
 	if err != nil {
 		mongoClient.Disconnect(context.Background())
 		return nil, err
 	}
 
 	return &Controller{
-		mongo:   mongoClient,
-		influx:  influxClient,
-		config:  config,
-		queries: qt,
+		mongo:  mongoClient,
+		pg:     pool,
+		config: config,
 
 		gatewayHealthStaleAge: staleAge,
 	}, nil
@@ -58,7 +47,8 @@ func New(config configuration.Config) (ctrl *Controller, err error) {
 
 func (this *Controller) Close() {
 	this.config.GetLogger().Info("close mongo connection", "result", this.mongo.Disconnect(nil))
-	this.config.GetLogger().Info("close influx connection", "result", this.influx.Close())
+	this.pg.Close()
+	this.config.GetLogger().Info("closed postgres pool")
 }
 
 func (this *Controller) Config() *configuration.Config {

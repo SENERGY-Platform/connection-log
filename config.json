@@ -19,12 +19,11 @@
 
   "PermissionsV2Url": "http://permissions-v2:8080",
 
-  "InfluxdbUrl": "http://influxdb:8086",
-  "InfluxdbDb": "connectionlog",
-  "InfluxdbUser": "",
-  "InfluxdbPw": "",
-  "InfluxdbTimeout": 5,
-  "InfluxdbUseUTC": true,
+  "PostgresHost": "timescale",
+  "PostgresPort": 5432,
+  "PostgresUser": "connectionlog",
+  "PostgresPw": "",
+  "PostgresDb": "connectionlog",
 
   "DeviceRepoUrl": "http://api.device-repository:8080",
 

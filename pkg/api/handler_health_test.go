@@ -123,7 +123,6 @@ func newHealthAPITestController(t *testing.T) (*controller.Controller, *mongo.Co
 		GatewayHealthCollection: "gatewayhealth",
 		GatewayHealthStaleAge:   "15m",
 		PermissionsV2Url:        perms.URL,
-		InfluxdbUrl:             "http://localhost:1",
 	})
 	if err != nil {
 		t.Fatal(err)

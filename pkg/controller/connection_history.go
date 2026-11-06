@@ -2,17 +2,12 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
 	"time"
 
-	"log/slog"
-
 	"github.com/SENERGY-Platform/connection-log/pkg/model"
-	"github.com/influxdata/influxdb1-client/models"
-	influx "github.com/influxdata/influxdb1-client/v2"
 )
 
 func (this *Controller) GetHistoricalStates(ctx context.Context, id, kind string, rng time.Duration, since, until time.Time) (model.ResourceHistoricalStates, error) {
@@ -52,32 +47,21 @@ func (this *Controller) QueryHistoricalStatesSlice(ctx context.Context, query mo
 	return sl, nil
 }
 
-func (this *Controller) QueryHistoricalStatesMap(_ context.Context, query model.QueryHistorical) (map[string]model.HistoricalStates, error) {
+// QueryHistoricalStatesMap returns the states of the requested ids. An id without any state inside
+// or next to the window is not part of the result.
+func (this *Controller) QueryHistoricalStatesMap(ctx context.Context, query model.QueryHistorical) (map[string]model.HistoricalStates, error) {
 	idsBykind, err := GetIdsByKind(query.IDs, false)
 	if err != nil {
 		return nil, err
 	}
+	window := resolveWindow(query, time.Now())
 	resMap := map[string]model.HistoricalStates{}
 	for kind, ids := range idsBykind {
-		query.IDs = ids
-		if err := validateKind(kind); err != nil {
-			return nil, err
-		}
-		if len(query.IDs) == 0 {
-			return nil, nil
-		}
-		statement, prevID, seriesID, nextID, err := this.buildStatement(query, kind)
+		table, err := historyTable(kind)
 		if err != nil {
 			return nil, err
 		}
-		resp, err := this.influx.Query(influx.NewQuery(statement, this.config.InfluxdbDb, "s"))
-		if err != nil {
-			return nil, err
-		}
-		if err = resp.Error(); err != nil {
-			return nil, err
-		}
-		subResMap, err := handleResults(resp.Results, kind, prevID, seriesID, nextID)
+		subResMap, err := this.queryWindow(ctx, table, ids, window)
 		if err != nil {
 			return nil, err
 		}
@@ -86,199 +70,59 @@ func (this *Controller) QueryHistoricalStatesMap(_ context.Context, query model.
 	return resMap, nil
 }
 
-func handleResults(results []influx.Result, kind string, prevID, seriesID, nextID int) (map[string]model.HistoricalStates, error) {
-	if len(results) == 0 {
-		return nil, errors.New("no results")
+func (this *Controller) queryWindow(ctx context.Context, table string, ids []string, w historyWindow) (map[string]model.HistoricalStates, error) {
+	resMap := map[string]model.HistoricalStates{}
+	if w.prevBefore != nil {
+		stmt, args := prevStatement(table, ids, *w.prevBefore)
+		err := this.queryStates(ctx, stmt, args, func(id string, state model.State) {
+			res := resMap[id]
+			res.PrevState = &state
+			resMap[id] = res
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
-	resMap := make(map[string]model.HistoricalStates)
-	for _, result := range results {
-		if result.Err != "" {
-			return nil, errors.New(result.Err)
+	stmt, args := seriesStatement(table, ids, w)
+	err := this.queryStates(ctx, stmt, args, func(id string, state model.State) {
+		res := resMap[id]
+		res.States = append(res.States, state)
+		resMap[id] = res
+	})
+	if err != nil {
+		return nil, err
+	}
+	if w.nextAfter != nil {
+		stmt, args := nextStatement(table, ids, *w.nextAfter)
+		err := this.queryStates(ctx, stmt, args, func(id string, state model.State) {
+			res := resMap[id]
+			res.NextState = &state
+			resMap[id] = res
+		})
+		if err != nil {
+			return nil, err
 		}
-		switch result.StatementId {
-		case seriesID:
-			handleSeries(resMap, kind, result.Series, 0)
-		case prevID:
-			handleSeries(resMap, kind, result.Series, 1)
-		case nextID:
-			handleSeries(resMap, kind, result.Series, 2)
-		default:
-			return nil, fmt.Errorf("unknown statement id: %d", result.StatementId)
-		}
-
 	}
 	return resMap, nil
 }
 
-func handleSeries(resMap map[string]model.HistoricalStates, kind string, series []models.Row, resType int) {
-	for _, row := range series {
-		if len(row.Values) == 0 {
-			continue
-		}
-		key, ok := row.Tags[kind]
-		if !ok {
-			continue
-		}
-		if err := handleRow(resMap, row.Values, key, resType); err != nil {
-			slog.Error("unable to handle row", "error", err)
-			continue
-		}
-	}
-}
-
-func handleRow(resMap map[string]model.HistoricalStates, rowValues [][]any, key string, resType int) error {
-	resource := resMap[key]
-	if resType > 0 {
-		state, err := rowItemToState(rowValues[0])
-		if err != nil {
-			return err
-		}
-		switch resType {
-		case 1:
-			resource.PrevState = &state
-		case 2:
-			resource.NextState = &state
-		}
-	} else {
-		for _, item := range rowValues {
-			state, err := rowItemToState(item)
-			if err != nil {
-				slog.Error("unable to transform row item to state", "error", err)
-				continue
-			}
-			resource.States = append(resource.States, state)
-		}
-	}
-	resMap[key] = resource
-	return nil
-}
-
-func rowItemToState(item []any) (model.State, error) {
-	if len(item) < 2 {
-		return model.State{}, errors.New("invalid length")
-	}
-	timeVal, ok := item[0].(json.Number)
-	if !ok {
-		return model.State{}, fmt.Errorf("invalid type: time=%t", item[0])
-	}
-	timeInt, err := timeVal.Int64()
+func (this *Controller) queryStates(ctx context.Context, stmt string, args []any, handle func(id string, state model.State)) error {
+	rows, err := this.pg.Query(ctx, stmt, args...)
 	if err != nil {
-		return model.State{}, fmt.Errorf("time conversion failed: %s", err)
+		return fmt.Errorf("unable to query connection history: %w", err)
 	}
-	connected, ok := item[1].(bool)
-	if !ok {
-		return model.State{}, fmt.Errorf("invalid type: connected=%t", item[1])
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		var state model.State
+		if err := rows.Scan(&id, &state.Time, &state.Connected); err != nil {
+			return fmt.Errorf("unable to read connection history: %w", err)
+		}
+		state.Time = state.Time.UTC()
+		handle(id, state)
 	}
-	return model.State{
-		Time:      time.Unix(timeInt, 0).UTC(),
-		Connected: connected,
-	}, nil
-}
-
-func (this *Controller) buildStatement(query model.QueryHistorical, kind string) (string, int, int, int, error) {
-	hasRange := query.Range > 0
-	hasSince := !query.Since.IsZero()
-	hasUntil := !query.Until.IsZero()
-	switch {
-	case hasSince && hasUntil:
-		// Since && Until: time >= timestamp AND time <= timestamp
-		// include prev and next
-		prevQ, err := this.queries.StatePrevQuery(query.IDs, kind, query.Since)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, kind, query.Since, query.Until)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		nextQ, err := this.queries.StateNextQuery(query.IDs, kind, query.Until)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		return prevQ + seriesQ + nextQ, 0, 1, 2, nil
-	case hasRange && hasUntil:
-		// Range && Until: time >= (timestamp - duration) AND time <= timestamp
-		// include prev and next
-		since := query.Until.Add(time.Duration(query.Range) * -1)
-		prevQ, err := this.queries.StatePrevQuery(query.IDs, kind, since)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, kind, since, query.Until)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		nextQ, err := this.queries.StateNextQuery(query.IDs, kind, query.Until)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		return prevQ + seriesQ + nextQ, 0, 1, 2, nil
-	case hasRange && hasSince:
-		// Range && Since: time >= timestamp AND time <= (timestamp + duration)
-		// include prev and next
-		until := query.Since.Add(time.Duration(query.Range))
-		prevQ, err := this.queries.StatePrevQuery(query.IDs, kind, query.Since)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		seriesQ, err := this.queries.StatesTimeGrtEqLesEqQuery(query.IDs, kind, query.Since, until)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		nextQ, err := this.queries.StateNextQuery(query.IDs, kind, until)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		return prevQ + seriesQ + nextQ, 0, 1, 2, nil
-	case hasRange:
-		// Range: time >= (now - duration)
-		// include prev
-		timestamp := getCurrentTime(this.config.InfluxdbUseUTC).Add(time.Duration(query.Range) * -1)
-		prevQ, err := this.queries.StatePrevQuery(query.IDs, kind, timestamp)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		seriesQ, err := this.queries.StatesTimeGrtEqQuery(query.IDs, kind, timestamp)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		return prevQ + seriesQ, 0, 1, -1, nil
-	case hasUntil:
-		// Until: time <= timestamp
-		// include next
-		seriesQ, err := this.queries.StatesTimeLesEqQuery(query.IDs, kind, query.Until)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		nextQ, err := this.queries.StateNextQuery(query.IDs, kind, query.Until)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		return seriesQ + nextQ, -1, 0, 1, nil
-	case hasSince:
-		// Since: time >= timestamp
-		// include prev
-		prevQ, err := this.queries.StatePrevQuery(query.IDs, kind, query.Since)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		seriesQ, err := this.queries.StatesTimeGrtEqQuery(query.IDs, kind, query.Since)
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		return prevQ + seriesQ, 0, 1, -1, nil
-	default:
-		seriesQ, err := this.queries.StatesTimeLesEqQuery(query.IDs, kind, getCurrentTime(this.config.InfluxdbUseUTC))
-		if err != nil {
-			return "", 0, 0, 0, err
-		}
-		return seriesQ, -1, 0, -1, nil
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("unable to read connection history: %w", err)
 	}
-}
-
-func getCurrentTime(utc bool) time.Time {
-	if utc {
-		return time.Now().UTC()
-	}
-	return time.Now()
+	return nil
 }

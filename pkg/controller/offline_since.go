@@ -2,55 +2,39 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
-	"slices"
+	"fmt"
 	"time"
 
 	"github.com/SENERGY-Platform/connection-log/pkg/model"
-	influx "github.com/influxdata/influxdb1-client/v2"
 )
 
+// GetOfflineSince lists the ids whose last stored state is disconnected, with the time of that state,
+// oldest first. Ids without any stored state are not listed.
 func (this *Controller) GetOfflineSince(ctx context.Context, ids []string, kind string) ([]model.OfflineSinceResponse, error) {
-	query, err := this.queries.OfflineSinceQuery(ids, kind)
+	table, err := historyTable(kind)
 	if err != nil {
 		return nil, err
 	}
-
-	resp, err := this.influx.Query(influx.NewQuery(query, this.config.InfluxdbDb, "s"))
-	if err != nil {
-		return nil, err
-	}
-
-	err = resp.Error()
-	if err != nil {
-		return nil, err
-	}
-
 	result := []model.OfflineSinceResponse{}
-
-	for _, res := range resp.Results {
-		for _, series := range res.Series {
-			for _, row := range series.Values {
-				timestamp, ok := row[0].(json.Number)
-				if !ok {
-					continue
-				}
-				i64, err := timestamp.Int64()
-				if err != nil {
-					continue
-				}
-				parsedTime := time.Unix(i64, 0)
-				id, ok := row[1].(string)
-				if !ok {
-					continue
-				}
-				result = append(result, model.OfflineSinceResponse{ID: id, OfflineSince: parsedTime})
-			}
-		}
+	if len(ids) == 0 {
+		return result, nil
 	}
-	slices.SortFunc(result, func(a, b model.OfflineSinceResponse) int {
-		return a.OfflineSince.Compare(b.OfflineSince)
-	})
+	stmt, args := offlineSinceStatement(table, ids)
+	rows, err := this.pg.Query(ctx, stmt, args...)
+	if err != nil {
+		return nil, fmt.Errorf("unable to query offline states: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		var since time.Time
+		if err := rows.Scan(&id, &since); err != nil {
+			return nil, fmt.Errorf("unable to read offline states: %w", err)
+		}
+		result = append(result, model.OfflineSinceResponse{ID: id, OfflineSince: since})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("unable to read offline states: %w", err)
+	}
 	return result, nil
-
 }
